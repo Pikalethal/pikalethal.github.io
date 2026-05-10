@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcript — ღꨄ・helpers</title>
+<style>
+  /* ── Reset & base ─────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary:      #313338;
+    --bg-secondary:    #2b2d31;
+    --bg-tertiary:     #1e1f22;
+    --bg-accent:       #383a40;
+    --bg-hover:        rgba(4,4,5,.07);
+    --text-normal:     #dbdee1;
+    --text-muted:      #80848e;
+    --text-link:       #00a8fc;
+    --brand:           #5865f2;
+    --green:           #23a55a;
+    --red:             #f23f43;
+    --embed-bg:        #2b2d31;
+    --border:          #3f4147;
+    --scrollbar-track: #2b2d31;
+    --scrollbar-thumb: #1a1b1e;
+    --radius:          4px;
+    --font-main:       'gg sans', 'Noto Sans', Whitney, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono:       'Consolas', 'Andale Mono WT', 'Andale Mono', 'Lucida Console', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-tertiary);
+    color: var(--text-normal);
+    font-family: var(--font-main);
+    font-size: 16px;
+    line-height: 1.375;
+    overflow: hidden;
+  }
+
+  a { color: var(--text-link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Layout ──────────────────────────────────────────────────────── */
+  .layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* ── Header bar ──────────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 48px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    flex-shrink: 0;
+    box-shadow: 0 1px 0 rgba(4,4,5,.2), 0 1.5px 0 rgba(6,6,7,.05), 0 2px 0 rgba(4,4,5,.05);
+    z-index: 10;
+  }
+
+  .guild-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .guild-icon-placeholder {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff;
+    flex-shrink: 0;
+  }
+  .header-divider {
+    width: 1px; height: 24px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .channel-hash {
+    color: var(--text-muted);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .channel-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-normal);
+    flex-shrink: 0;
+  }
+  .channel-topic {
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 1px solid var(--border);
+    padding-left: 12px;
+    margin-left: 4px;
+  }
+  .guild-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-normal);
+  }
+  .header-spacer { flex: 1; }
+  .transcript-badge {
+    background: var(--brand);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 100px;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+  }
+
+  /* ── Search bar ──────────────────────────────────────────────────── */
+  .search-bar-wrap {
+    padding: 8px 16px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .search-input {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: var(--radius);
+    color: var(--text-normal);
+    font-family: var(--font-main);
+    font-size: 14px;
+    padding: 6px 10px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-input:focus { border-color: var(--brand); }
+  .search-input::placeholder { color: var(--text-muted); }
+  #search-count {
+    font-size: 13px; color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── Message pane ────────────────────────────────────────────────── */
+  .messages-pane {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 0 24px;
+    scroll-behavior: smooth;
+  }
+
+  /* ── Scrollbar ───────────────────────────────────────────────────── */
+  .messages-pane::-webkit-scrollbar { width: 8px; }
+  .messages-pane::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  .messages-pane::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+
+  /* ── Date separator ──────────────────────────────────────────────── */
+  .date-separator {
+    display: flex; align-items: center;
+    margin: 16px 16px 8px;
+    gap: 8px;
+  }
+  .date-separator::before, .date-separator::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+  .date-separator-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    padding: 0 4px;
+  }
+
+  /* ── Messages ────────────────────────────────────────────────────── */
+  .message {
+    display: flex;
+    gap: 0;
+    padding: 2px 16px 2px 72px;
+    position: relative;
+    min-height: 22px;
+    transition: background .05s;
+  }
+  .message:not(.grouped) { padding-top: 16px; }
+  .message:hover { background: var(--bg-hover); }
+  .message.highlight { background: rgba(88,101,242,.15) !important; }
+
+  .avatar-col {
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    width: 40px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .avatar-col.grouped {
+    top: 0; height: 100%;
+    align-items: flex-start;
+    padding-top: 4px;
+  }
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: border-radius .15s;
+  }
+  .avatar:hover { border-radius: 30%; }
+
+  .message-timestamp-grouped {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .1s;
+    padding-top: 2px;
+    user-select: none;
+  }
+  .message:hover .message-timestamp-grouped { opacity: 1; }
+
+  .message-body {
+    min-width: 0;
+    flex: 1;
+  }
+  .message-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+  }
+  .author-name {
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1.375;
+    cursor: pointer;
+  }
+  .author-name:hover { text-decoration: underline; }
+  .message-timestamp {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    cursor: default;
+  }
+  .bot-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--brand);
+    color: #fff;
+    padding: 0 4px;
+    border-radius: 3px;
+    letter-spacing: .4px;
+    vertical-align: middle;
+  }
+  .message-content {
+    font-size: 16px;
+    color: var(--text-normal);
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  .edited-tag {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 4px;
+    font-style: italic;
+  }
+
+  /* ── System messages ─────────────────────────────────────────────── */
+  .system-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 16px 4px 72px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .system-icon { font-size: 18px; }
+
+  /* ── Reply context ───────────────────────────────────────────────── */
+  .reply-context {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    margin-left: -8px;
+  }
+  .reply-bar {
+    width: 2px; height: 24px;
+    background: var(--text-muted);
+    border-radius: 100px;
+    flex-shrink: 0;
+    margin-left: 6px;
+  }
+  .reply-content {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .reply-author { font-weight: 600; color: var(--text-normal); }
+  .reply-text { font-style: italic; }
+
+  /* ── Attachments ─────────────────────────────────────────────────── */
+  .attachment { margin-top: 8px; }
+  .image-attachment img {
+    max-width: min(520px, 100%);
+    max-height: 350px;
+    border-radius: 4px;
+    cursor: zoom-in;
+    display: block;
+  }
+  .video-attachment video,
+  .audio-attachment audio {
+    max-width: min(520px, 100%);
+    display: block;
+  }
+  .file-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--embed-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    max-width: 420px;
+  }
+  .file-icon { font-size: 28px; }
+  .file-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .file-name { color: var(--text-link); font-weight: 500; font-size: 14px; word-break: break-all; }
+  .file-size { font-size: 12px; color: var(--text-muted); }
+  .file-dl { font-size: 20px; color: var(--text-muted); padding: 4px; }
+  .file-dl:hover { color: var(--text-normal); }
+
+  /* ── Embeds ──────────────────────────────────────────────────────── */
+  .embed {
+    background: var(--embed-bg);
+    border-left: 4px solid var(--brand);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 8px;
+    max-width: 520px;
+    display: grid;
+    gap: 8px;
+    position: relative;
+  }
+  .embed-author {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 600; color: var(--text-normal);
+  }
+  .embed-author-icon { width: 24px; height: 24px; border-radius: 50%; }
+  .embed-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--text-normal);
+    word-break: break-word;
+  }
+  .embed-title a { color: var(--text-link); }
+  .embed-description { font-size: 14px; color: var(--text-normal); word-break: break-word; }
+  .embed-fields { display: flex; flex-wrap: wrap; gap: 8px; }
+  .embed-field { flex: 0 0 100%; min-width: 0; }
+  .embed-field.inline { flex: 1 1 120px; }
+  .field-name { font-size: 13px; font-weight: 700; color: var(--text-normal); margin-bottom: 2px; }
+  .field-value { font-size: 14px; color: var(--text-normal); word-break: break-word; }
+  .embed-image { max-width: 100%; border-radius: 4px; margin-top: 4px; }
+  .embed-thumbnail {
+    position: absolute; top: 12px; right: 12px;
+    width: 72px; height: 72px;
+    border-radius: 4px; object-fit: cover;
+  }
+  .embed-footer {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .embed-footer-icon { width: 20px; height: 20px; border-radius: 50%; }
+
+  /* ── Reactions ───────────────────────────────────────────────────── */
+  .reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .reaction {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--bg-accent);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 2px 8px;
+    font-size: 13px;
+    cursor: default;
+    transition: background .1s;
+  }
+  .reaction:hover { background: var(--bg-hover); }
+  .reaction-emoji { height: 18px; width: 18px; object-fit: contain; }
+  .reaction-count { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+
+  /* ── Code ─────────────────────────────────────────────────────────── */
+  .inline-code {
+    background: rgba(30,31,34,.6);
+    border-radius: 3px;
+    padding: 0 4px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: #f2f3f5;
+    border: 1px solid var(--border);
+  }
+  .code-block {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-top: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    max-width: min(700px, 100%);
+  }
+  .code-block code { font-family: var(--font-mono); font-size: 13px; color: #b9bbbe; }
+  .code-lang {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-bottom: 6px;
+  }
+
+  /* ── Spoiler ─────────────────────────────────────────────────────── */
+  .spoiler {
+    background: var(--bg-tertiary);
+    color: transparent;
+    border-radius: 3px;
+    padding: 0 3px;
+    cursor: pointer;
+    transition: color .1s, background .1s;
+    user-select: none;
+  }
+  .spoiler.revealed { color: var(--text-normal); background: var(--bg-accent); }
+
+  /* ── Emoji ───────────────────────────────────────────────────────── */
+  .emoji { width: 22px; height: 22px; vertical-align: middle; }
+
+  /* ── Footer ──────────────────────────────────────────────────────── */
+  .footer {
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .footer-stat strong { color: var(--text-normal); }
+  .footer-spacer { flex: 1; }
+  .footer-brand {
+    font-size: 12px; font-weight: 600;
+    color: var(--brand); letter-spacing: .3px;
+  }
+
+  /* ── Search highlight ─────────────────────────────────────────────── */
+  mark {
+    background: rgba(250,166,26,.3);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  /* ── Scroll to bottom btn ─────────────────────────────────────────── */
+  #scroll-btn {
+    position: fixed;
+    bottom: 56px;
+    right: 24px;
+    background: var(--brand);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.4);
+    transition: background .15s, transform .1s;
+    z-index: 100;
+  }
+  #scroll-btn:hover { background: #4752c4; transform: scale(1.05); }
+  #scroll-btn.visible { display: flex; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Header -->
+  <div class="header">
+    <img class="guild-icon" src="assets/guild-icons/guild-icon.png" alt="">
+    <span class="guild-name">Lethal</span>
+    <div class="header-divider"></div>
+    <span class="channel-hash">#</span>
+    <span class="channel-name">ღꨄ・helpers</span>
+    <span class="channel-topic"></span>
+    <div class="header-spacer"></div>
+    <span class="transcript-badge">Transcript</span>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar-wrap">
+    <input
+      id="search-input"
+      class="search-input"
+      type="text"
+      placeholder="Search messages…"
+      oninput="doSearch(this.value)"
+    >
+    <span id="search-count"></span>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages-pane" id="messages-pane">
+    <div class="message" id="msg-1502195631752740884"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="Dex-chan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff0000">Dex-chan</span><span class="message-timestamp" title="08 May 2026 06:29">08 May 2026 06:29</span></div>
+<div class="reply-context"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">✦ Jeno ✦</span> <span class="reply-text">R u banned asw</span></div></div>
+<div class="message-content">for advertising btw</div>
+</div></div>
+<div class="message  grouped" id="msg-1502195744701153280"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="08 May 2026 06:29">06:29</div></div><div class="message-body"><div class="message-content">and bro who gives a 90day ban</div>
+</div></div>
+<div class="message" id="msg-1502615048735162569"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-930750463421345812.png" alt="✦ Jeno ✦" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#00ffff">✦ Jeno ✦</span><span class="message-timestamp" title="09 May 2026 10:15">09 May 2026 10:15</span></div>
+<div class="message-content">Bionic is a hopper</div>
+</div></div>
+<div class="message  grouped" id="msg-1502615082784264273"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="09 May 2026 10:15">10:15</div></div><div class="message-body"><div class="message-content">12 guild in the last 2 months 🙏</div>
+</div></div>
+<div class="message" id="msg-1502615120168226936"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1470341120990122055.png" alt="lir" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff004d">lir</span><span class="message-timestamp" title="09 May 2026 10:16">09 May 2026 10:16</span></div>
+<div class="message-content">Maybe ded ones bro</div>
+</div></div>
+<div class="message  grouped" id="msg-1502615137922842665"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="09 May 2026 10:16">10:16</div></div><div class="message-body"><div class="message-content">and</div>
+</div></div>
+<div class="message" id="msg-1502615162727694416"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-930750463421345812.png" alt="✦ Jeno ✦" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#00ffff">✦ Jeno ✦</span><span class="message-timestamp" title="09 May 2026 10:16">09 May 2026 10:16</span></div>
+<div class="message-content">O</div>
+</div></div>
+<div class="message" id="msg-1502615165944725686"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1470341120990122055.png" alt="lir" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff004d">lir</span><span class="message-timestamp" title="09 May 2026 10:16">09 May 2026 10:16</span></div>
+<div class="message-content">If he does here wouldn&#x27;t he be blacklisted<span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message" id="msg-1502615212014964746"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-930750463421345812.png" alt="✦ Jeno ✦" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#00ffff">✦ Jeno ✦</span><span class="message-timestamp" title="09 May 2026 10:16">09 May 2026 10:16</span></div>
+<div class="reply-context"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">lir</span> <span class="reply-text">If he does here wouldn&#x27;t he be blacklisted</span></div></div>
+<div class="message-content">Won&#x27;t be?</div>
+</div></div>
+<div class="message" id="msg-1502615328365219841"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1470341120990122055.png" alt="lir" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff004d">lir</span><span class="message-timestamp" title="09 May 2026 10:16">09 May 2026 10:16</span></div>
+<div class="message-content">Phones autotype</div>
+</div></div>
+<div class="message  grouped" id="msg-1502615341711229019"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="09 May 2026 10:16">10:16</div></div><div class="message-body"><div class="message-content">🥀</div>
+</div></div>
+<div class="message" id="msg-1502615453460201492"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-930750463421345812.png" alt="✦ Jeno ✦" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#00ffff">✦ Jeno ✦</span><span class="message-timestamp" title="09 May 2026 10:17">09 May 2026 10:17</span></div>
+<div class="message-content">Lawl</div>
+</div></div>
+<div class="message" id="msg-1502727217661349908"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="09 May 2026 17:41">09 May 2026 17:41</span></div>
+<div class="message-content">isn&#x27;t this sexual content in &lt;#1116022309455663236&gt; ...?</div>
+<div class="attachment image-attachment"><img src="assets/attachments/test/attachment-image.png" alt="image.png" loading="lazy" onclick="window.open('assets/attachments/test/attachment-image.png','_blank')"></div>
+</div></div>
+<div class="message" id="msg-1502729925667586168"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1470341120990122055.png" alt="lir" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff004d">lir</span><span class="message-timestamp" title="09 May 2026 17:52">09 May 2026 17:52</span></div>
+<div class="message-content">ikr</div>
+</div></div>
+<div class="message  grouped" id="msg-1502729988594729082"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="09 May 2026 17:52">17:52</div></div><div class="message-body"><div class="message-content">&lt;@&amp;1492009382634852403&gt;</div>
+</div></div>
+<div class="message" id="msg-1502731538574610622"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="09 May 2026 17:58">09 May 2026 17:58</span></div>
+<div class="message-content">well ig I&#x27;ll do it</div>
+</div></div>
+<div class="message" id="msg-1502731863641297097"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#a9c9ff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="09 May 2026 17:59">09 May 2026 17:59</span></div>
+<div class="embed" style="border-left-color:#00ff00">
+<div class="embed-description">✅ &lt;@800304400781410354&gt; has been muted for <strong>10h</strong> (expires &lt;t:1778385595:R&gt;).</div>
+</div>
+</div></div>
+<div class="message  grouped" id="msg-1502732133159145532"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="09 May 2026 18:00">18:00</div></div><div class="message-body"><div class="embed" style="border-left-color:#5865f2">
+<div class="embed-title">Punishment History — ___helikopter___</div>
+<div class="embed-description">1. <strong>MUTE</strong> | &lt;t:1777865936:D&gt; | by &lt;@930750463421345812&gt;<br>&gt; Reason: Racism<br>&gt; Expires: &lt;t:1777873133:R&gt;<br>&gt; [proof](<a href="https://cdn.discordapp.com/attachments/1496551469162430575/1500703242349314118/Screenshot" target="_blank" rel="noopener noreferrer">https://cdn.discordapp.com/attachments/1496551469162430575/1500703242349314118/Screenshot</a><em>2026-05-04-09-08-35-945-edit</em>com.discord.jpg?ex=6a00a68e&amp;is=69ff550e&amp;hm=4860850ca6becb4f2031c580b902cf4887b192f21fda7da5ddeec47c640577c1&amp;)<br><br>2. <strong>MUTE</strong> | &lt;t:1778349605:D&gt; | by &lt;@840587974000771072&gt;<br>&gt; Reason: sexual content in public chat<br>&gt; Expires: &lt;t:1778385595:R&gt;<br>&gt; [proof](<a href="https://cdn.discordapp.com/attachments/1496551469162430575/1502731870100520990/image.png?ex=6a00c79d&amp;is=69ff761d&amp;hm=1f1966857f6cc95b6d4886fd15b8a5e5b9bd21fd7596a54e73e91ff0428c0995&amp;)" target="_blank" rel="noopener noreferrer">https://cdn.discordapp.com/attachments/1496551469162430575/1502731870100520990/image.png?ex=6a00c79d&amp;is=69ff761d&amp;hm=1f1966857f6cc95b6d4886fd15b8a5e5b9bd21fd7596a54e73e91ff0428c0995&amp;)</a></div>
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+<div class="embed-footer"><span>User ID: 800304400781410354  •  Total offences: 2  •  Page 1/1</span></div>
+</div>
+</div></div>
+<div class="message" id="msg-1502778315797434399"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="Dex-chan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff0000">Dex-chan</span><span class="message-timestamp" title="09 May 2026 21:04">09 May 2026 21:04</span></div>
+<div class="reply-context"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">Alya is a cutie</span> <span class="reply-text">isn&#x27;t this sexual content in &lt;#1116022309455663236&gt; ...?</span></div></div>
+<div class="message-content">BRO THE MILK OFF</div>
+</div></div>
+<div class="message  grouped" id="msg-1502778322088759316"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="09 May 2026 21:04">21:04</div></div><div class="message-body"><div class="message-content">NO WAY</div>
+</div></div>
+<div class="message" id="msg-1503012851886067732"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1470341120990122055.png" alt="lir" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff004d">lir</span><span class="message-timestamp" title="10 May 2026 12:36">10 May 2026 12:36</span></div>
+<div class="message-content">&lt;@1248958414651134039&gt;</div>
+</div></div>
+<div class="message  grouped" id="msg-1503012854779871335"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 12:36">12:36</div></div><div class="message-body"><div class="message-content">welcome</div>
+</div></div>
+<div class="message  grouped" id="msg-1503012921649660035"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 12:36">12:36</div></div><div class="message-body"><div class="message-content">read &lt;#1492166429175316500&gt; , if you have any issue ping &lt;@873228829454389289&gt;</div>
+</div></div>
+<div class="message  grouped" id="msg-1503012994026705137"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 12:37">12:37</div></div><div class="message-body"><div class="message-content">prefix for mute is / with the lethal bot</div>
+</div></div>
+<div class="message" id="msg-1503013074322591846"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 12:37">10 May 2026 12:37</span></div>
+<div class="message-content">ping me if u have issues these guy&#x27;s rulebook sucks <img class="emoji" src="<a href="https://cdn.discordapp.com/emojis/880113702211317760.png?size=32" target="_blank" rel="noopener noreferrer">https://cdn.discordapp.com/emojis/880113702211317760.png?size=32</a>" alt=":AlyaPeace:" title=":AlyaPeace:"><span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message  grouped" id="msg-1503013166244958259"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 12:37">12:37</div></div><div class="message-body"><div class="message-content">well all u have is ./mute so.. i doubt you&#x27;d need help</div>
+</div></div>
+<div class="message" id="msg-1503013199501459456"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#a9c9ff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="10 May 2026 12:37">10 May 2026 12:37</span></div>
+<div class="message-content">❌ Invalid duration. Use formats like <code class="inline-code">&quot;10m&quot;</code>, <code class="inline-code">&quot;1h&quot;</code>, <code class="inline-code">&quot;1d&quot;</code>.<br>Minimum is 1 minute. Leave blank for a permanent mute.</div>
+</div></div>
+<div class="message" id="msg-1503019143228686548"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1248958414651134039.png" alt="meoweys" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#00ffff">meoweys</span><span class="message-timestamp" title="10 May 2026 13:01">10 May 2026 13:01</span></div>
+<div class="message-content">ggs alr<span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message" id="msg-1503020141926023249"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 13:05">10 May 2026 13:05</span></div>
+<div class="message-content">?record test</div>
+</div></div>
+<div class="message" id="msg-1503020145939976262"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#a9c9ff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="10 May 2026 13:05">10 May 2026 13:05</span></div>
+<div class="message-content">📄 Fetching and recording up to 1000 messages…</div>
+</div></div>
+<div class="message  grouped" id="msg-1503020180417024242"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 13:05">13:05</div></div><div class="message-body"><div class="message-content">📄 Generating transcript with assets…</div>
+</div></div>
+<div class="message  grouped" id="msg-1503020656793747486"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 13:07">13:07</div></div><div class="message-body"><div class="message-content">❌ Upload failed. Check your token and repo permissions.</div>
+</div></div>
+<div class="message" id="msg-1503021396236828685"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 13:10">10 May 2026 13:10</span></div>
+<div class="message-content"><a href="https://tenor.com/view/higuruma-hiromi-oh-my-god-jjk-jujutsu-kaisen-gif-8699431527531774396" target="_blank" rel="noopener noreferrer">https://tenor.com/view/higuruma-hiromi-oh-my-god-jjk-jujutsu-kaisen-gif-8699431527531774396</a></div>
+<div class="embed" style="border-left-color:#4f545c">
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+</div>
+</div></div>
+<div class="message" id="msg-1503023407107805265"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 13:18">10 May 2026 13:18</span></div>
+<div class="message-content">?reload</div>
+</div></div>
+<div class="message" id="msg-1503023426455998654"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#a9c9ff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="10 May 2026 13:18">10 May 2026 13:18</span></div>
+<div class="message-content">Reloaded all cogs successfully.</div>
+</div></div>
+<div class="message" id="msg-1503023444181254175"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 13:18">10 May 2026 13:18</span></div>
+<div class="message-content">?record test 50</div>
+</div></div>
+<div class="message" id="msg-1503023446387458149"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#a9c9ff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="10 May 2026 13:18">10 May 2026 13:18</span></div>
+<div class="message-content">📄 Fetching and recording up to 50 messages…</div>
+</div></div>
+<div class="message  grouped" id="msg-1503023451429011710"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 13:18">13:18</div></div><div class="message-body"><div class="message-content">📄 Generating transcript with assets…</div>
+</div></div>
+<div class="message  grouped" id="msg-1503023459402252373"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 13:18">13:18</div></div><div class="message-body"><div class="message-content">❌ Upload failed. Check your token and repo permissions.</div>
+</div></div>
+<div class="message" id="msg-1503023564092342302"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 13:19">10 May 2026 13:19</span></div>
+<div class="reply-context"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">Lethal</span> <span class="reply-text">❌ Upload failed. Check your token and repo permissions.</span></div></div>
+<div class="message-content">&lt;@1138854189141856276&gt; did u select all perms????</div>
+</div></div>
+<div class="message" id="msg-1503024323667951817"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1138854189141856276.png" alt="CreeperDxD [AWAY]" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#eb7916">CreeperDxD [AWAY]</span><span class="message-timestamp" title="10 May 2026 13:22">10 May 2026 13:22</span></div>
+<div class="reply-context"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">Alya is a cutie</span> <span class="reply-text">&lt;@1138854189141856276&gt; did u select all perms????</span></div></div>
+<div class="message-content">Yeah all 34</div>
+</div></div>
+<div class="message" id="msg-1503024388860018858"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 13:22">10 May 2026 13:22</span></div>
+<div class="message-content">yk what</div>
+</div></div>
+<div class="message  grouped" id="msg-1503024421487775845"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 13:22">13:22</div></div><div class="message-body"><div class="message-content">make a token with classic one</div>
+</div></div>
+<div class="message  grouped" id="msg-1503024442132004965"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 13:22">13:22</div></div><div class="message-body"><div class="message-content">instead of finegrain</div>
+</div></div>
+<div class="message" id="msg-1503024443407073380"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1138854189141856276.png" alt="CreeperDxD [AWAY]" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#eb7916">CreeperDxD [AWAY]</span><span class="message-timestamp" title="10 May 2026 13:22">10 May 2026 13:22</span></div>
+<div class="message-content">Ok</div>
+</div></div>
+<div class="message" id="msg-1503024584339755180"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 13:23">10 May 2026 13:23</span></div>
+<div class="reply-context"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">CreeperDxD [AWAY]</span> <span class="reply-text">Ok</span></div></div>
+<div class="message-content">select all perms (check all boxes)</div>
+</div></div>
+<div class="message  grouped" id="msg-1503024594389307402"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 13:23">13:23</div></div><div class="message-body"><div class="message-content">and dm me that</div>
+</div></div>
+<div class="message  grouped" id="msg-1503024613326848113"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 13:23">13:23</div></div><div class="message-body"><div class="message-content">don&#x27;t send it here 💀</div>
+</div></div>
+<div class="message" id="msg-1503029400587866203"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 13:42">10 May 2026 13:42</span></div>
+<div class="message-content">?record test 50</div>
+</div></div>
+<div class="message" id="msg-1503029404354351243"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#a9c9ff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="10 May 2026 13:42">10 May 2026 13:42</span></div>
+<div class="message-content">📄 Fetching and recording up to 50 messages…</div>
+</div></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="footer-stat">📨 <strong>50</strong> messages</span>
+    <span class="footer-stat">📅 Exported <strong>10 May 2026 at 13:42 UTC</strong></span>
+    <span class="footer-stat" id="exported-by-stat" style="display:' + (exportedByVisible ? 'inline' : 'none') + '">
+      👤 Exported by <strong>sti1ltyping</strong>
+    </span>
+    <span class="footer-spacer"></span>
+    <span class="footer-brand">discord_transcript</span>
+  </div>
+</div>
+
+<!-- Scroll to bottom -->
+<button id="scroll-btn" title="Scroll to bottom" onclick="scrollToBottom()">↓</button>
+
+<script>
+// ── Search ──────────────────────────────────────────────────────────────
+let originalHTML = {};
+const pane = document.getElementById('messages-pane');
+const countEl = document.getElementById('search-count');
+
+function escapeRE(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function doSearch(q) {
+  // Restore original content first
+  document.querySelectorAll('.message[data-orig]').forEach(el => {
+    el.innerHTML = el.dataset.orig;
+    delete el.dataset.orig;
+  });
+  document.querySelectorAll('.message').forEach(el => {
+    el.classList.remove('highlight');
+  });
+
+  if (!q.trim()) {
+    countEl.textContent = '';
+    return;
+  }
+
+  const re = new RegExp(escapeRE(q.trim()), 'gi');
+  let matches = 0;
+  let first = null;
+
+  document.querySelectorAll('.message').forEach(el => {
+    const body = el.querySelector('.message-body') || el;
+    const text = body.innerText;
+    if (re.test(text)) {
+      matches++;
+      el.classList.add('highlight');
+      if (!first) first = el;
+      // Highlight text nodes
+      if (!el.dataset.orig) el.dataset.orig = el.innerHTML;
+      highlightNode(el, re);
+    }
+  });
+
+  countEl.textContent = matches ? `${matches} result${matches !== 1 ? 's' : ''}` : 'No results';
+  if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function highlightNode(root, re) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    const parent = node.parentNode;
+    if (!parent || ['SCRIPT','STYLE','CODE','PRE'].includes(parent.tagName)) return;
+    const txt = node.textContent;
+    if (!re.test(txt)) return;
+    re.lastIndex = 0;
+    const span = document.createElement('span');
+    span.innerHTML = txt.replace(re, m => `<mark>${m}</mark>`);
+    parent.replaceChild(span, node);
+  });
+}
+
+// ── Scroll-to-bottom button ────────────────────────────────────────────
+function scrollToBottom() {
+  pane.scrollTo({ top: pane.scrollHeight, behavior: 'smooth' });
+}
+
+const scrollBtn = document.getElementById('scroll-btn');
+pane.addEventListener('scroll', () => {
+  const distFromBottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight;
+  scrollBtn.classList.toggle('visible', distFromBottom > 300);
+});
+
+// ── Keyboard shortcut: Ctrl+F / Cmd+F focuses search ──────────────────
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+  }
+});
+
+// ── Initial scroll to bottom ───────────────────────────────────────────
+window.addEventListener('load', () => {
+  pane.scrollTop = pane.scrollHeight;
+});
+</script>
+</body>
+</html>
