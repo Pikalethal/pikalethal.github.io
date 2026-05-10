@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcript — guild-application-sti1ltyping</title>
+<style>
+  /* ── Reset & base ─────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary:      #313338;
+    --bg-secondary:    #2b2d31;
+    --bg-tertiary:     #1e1f22;
+    --bg-accent:       #383a40;
+    --bg-hover:        rgba(4,4,5,.07);
+    --text-normal:     #dbdee1;
+    --text-muted:      #80848e;
+    --text-link:       #00a8fc;
+    --brand:           #5865f2;
+    --green:           #23a55a;
+    --red:             #f23f43;
+    --embed-bg:        #2b2d31;
+    --border:          #3f4147;
+    --scrollbar-track: #2b2d31;
+    --scrollbar-thumb: #1a1b1e;
+    --radius:          4px;
+    --font-main:       'gg sans', 'Noto Sans', Whitney, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono:       'Consolas', 'Andale Mono WT', 'Andale Mono', 'Lucida Console', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-tertiary);
+    color: var(--text-normal);
+    font-family: var(--font-main);
+    font-size: 16px;
+    line-height: 1.375;
+    overflow: hidden;
+  }
+
+  a { color: var(--text-link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Layout ──────────────────────────────────────────────────────── */
+  .layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* ── Header bar ──────────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 48px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    flex-shrink: 0;
+    box-shadow: 0 1px 0 rgba(4,4,5,.2), 0 1.5px 0 rgba(6,6,7,.05), 0 2px 0 rgba(4,4,5,.05);
+    z-index: 10;
+  }
+
+  .guild-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .guild-icon-placeholder {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff;
+    flex-shrink: 0;
+  }
+  .header-divider {
+    width: 1px; height: 24px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .channel-hash {
+    color: var(--text-muted);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .channel-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-normal);
+    flex-shrink: 0;
+  }
+  .channel-topic {
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 1px solid var(--border);
+    padding-left: 12px;
+    margin-left: 4px;
+  }
+  .guild-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-normal);
+  }
+  .header-spacer { flex: 1; }
+  .transcript-badge {
+    background: var(--brand);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 100px;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+  }
+
+  /* ── Search bar ──────────────────────────────────────────────────── */
+  .search-bar-wrap {
+    padding: 8px 16px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .search-input {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: var(--radius);
+    color: var(--text-normal);
+    font-family: var(--font-main);
+    font-size: 14px;
+    padding: 6px 10px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-input:focus { border-color: var(--brand); }
+  .search-input::placeholder { color: var(--text-muted); }
+  #search-count {
+    font-size: 13px; color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── Message pane ────────────────────────────────────────────────── */
+  .messages-pane {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 0 24px;
+    scroll-behavior: smooth;
+  }
+
+  /* ── Scrollbar ───────────────────────────────────────────────────── */
+  .messages-pane::-webkit-scrollbar { width: 8px; }
+  .messages-pane::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  .messages-pane::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+
+  /* ── Date separator ──────────────────────────────────────────────── */
+  .date-separator {
+    display: flex; align-items: center;
+    margin: 16px 16px 8px;
+    gap: 8px;
+  }
+  .date-separator::before, .date-separator::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+  .date-separator-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    padding: 0 4px;
+  }
+
+  /* ── Messages ────────────────────────────────────────────────────── */
+  .message {
+    display: flex;
+    gap: 0;
+    padding: 2px 16px 2px 72px;
+    position: relative;
+    min-height: 22px;
+    transition: background .05s;
+  }
+  .message:not(.grouped) { padding-top: 16px; }
+  .message:hover { background: var(--bg-hover); }
+  .message.highlight { background: rgba(88,101,242,.15) !important; }
+
+  .avatar-col {
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    width: 40px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .avatar-col.grouped {
+    top: 0; height: 100%;
+    align-items: flex-start;
+    padding-top: 4px;
+  }
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: border-radius .15s;
+  }
+  .avatar:hover { border-radius: 30%; }
+
+  .message-timestamp-grouped {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .1s;
+    padding-top: 2px;
+    user-select: none;
+  }
+  .message:hover .message-timestamp-grouped { opacity: 1; }
+
+  .message-body {
+    min-width: 0;
+    flex: 1;
+  }
+  .message-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+  }
+  .author-name {
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1.375;
+    cursor: pointer;
+  }
+  .author-name:hover { text-decoration: underline; }
+  .message-timestamp {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    cursor: default;
+  }
+  .bot-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--brand);
+    color: #fff;
+    padding: 0 4px;
+    border-radius: 3px;
+    letter-spacing: .4px;
+    vertical-align: middle;
+  }
+  .message-content {
+    font-size: 16px;
+    color: var(--text-normal);
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  .edited-tag {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 4px;
+    font-style: italic;
+  }
+
+  /* ── System messages ─────────────────────────────────────────────── */
+  .system-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 16px 4px 72px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .system-icon { font-size: 18px; }
+
+  /* ── Reply context ───────────────────────────────────────────────── */
+  .reply-context {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    margin-left: -8px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .reply-context:hover {
+    text-decoration: none;
+  }
+  .reply-context a {
+    display: flex;
+    color: inherit;
+    text-decoration: none;
+  }
+  .reply-bar {
+    width: 2px; height: 24px;
+    background: var(--text-muted);
+    border-radius: 100px;
+    flex-shrink: 0;
+    margin-left: 6px;
+  }
+  .reply-content {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .reply-author { font-weight: 600; color: var(--text-normal); }
+  .reply-text { font-style: italic; }
+  .mention {
+    color: var(--text-link);
+    font-weight: 600;
+  }
+
+  /* ── Attachments ─────────────────────────────────────────────────── */
+  .attachment { margin-top: 8px; }
+  .image-attachment img {
+    max-width: min(520px, 100%);
+    max-height: 350px;
+    border-radius: 4px;
+    cursor: zoom-in;
+    display: block;
+  }
+  .video-attachment video,
+  .audio-attachment audio {
+    max-width: min(520px, 100%);
+    display: block;
+  }
+  .file-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--embed-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    max-width: 420px;
+  }
+  .file-icon { font-size: 28px; }
+  .file-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .file-name { color: var(--text-link); font-weight: 500; font-size: 14px; word-break: break-all; }
+  .file-size { font-size: 12px; color: var(--text-muted); }
+  .file-dl { font-size: 20px; color: var(--text-muted); padding: 4px; }
+  .file-dl:hover { color: var(--text-normal); }
+
+  /* ── Embeds ──────────────────────────────────────────────────────── */
+  .embed {
+    background: var(--embed-bg);
+    border-left: 4px solid var(--brand);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 8px;
+    max-width: 520px;
+    display: grid;
+    gap: 8px;
+    position: relative;
+  }
+  .embed-author {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 600; color: var(--text-normal);
+  }
+  .embed-author-icon { width: 24px; height: 24px; border-radius: 50%; }
+  .embed-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--text-normal);
+    word-break: break-word;
+  }
+  .embed-title a { color: var(--text-link); }
+  .embed-description { font-size: 14px; color: var(--text-normal); word-break: break-word; }
+  .embed-fields { display: flex; flex-wrap: wrap; gap: 8px; }
+  .embed-field { flex: 0 0 100%; min-width: 0; }
+  .embed-field.inline { flex: 1 1 120px; }
+  .field-name { font-size: 13px; font-weight: 700; color: var(--text-normal); margin-bottom: 2px; }
+  .field-value { font-size: 14px; color: var(--text-normal); word-break: break-word; }
+  .embed-image { max-width: 100%; border-radius: 4px; margin-top: 4px; }
+  .inline-url-image {
+    max-width: min(520px, 100%);
+    max-height: 350px;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: block;
+  }
+  .embed-thumbnail {
+    position: absolute; top: 12px; right: 12px;
+    width: 72px; height: 72px;
+    border-radius: 4px; object-fit: cover;
+  }
+  .embed-footer {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .embed-footer-icon { width: 20px; height: 20px; border-radius: 50%; }
+
+  /* ── Reactions ───────────────────────────────────────────────────── */
+  .reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .reaction {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--bg-accent);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 2px 8px;
+    font-size: 13px;
+    cursor: default;
+    transition: background .1s;
+  }
+  .reaction:hover { background: var(--bg-hover); }
+  .reaction-emoji { height: 18px; width: 18px; object-fit: contain; }
+  .reaction-count { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+
+  /* ── Code ─────────────────────────────────────────────────────────── */
+  .inline-code {
+    background: rgba(30,31,34,.6);
+    border-radius: 3px;
+    padding: 0 4px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: #f2f3f5;
+    border: 1px solid var(--border);
+  }
+  .code-block {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-top: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    max-width: min(700px, 100%);
+  }
+  .code-block code { font-family: var(--font-mono); font-size: 13px; color: #b9bbbe; }
+  .code-lang {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-bottom: 6px;
+  }
+
+  /* ── Spoiler ─────────────────────────────────────────────────────── */
+  .spoiler {
+    background: var(--bg-tertiary);
+    color: transparent;
+    border-radius: 3px;
+    padding: 0 3px;
+    cursor: pointer;
+    transition: color .1s, background .1s;
+    user-select: none;
+  }
+  .spoiler.revealed { color: var(--text-normal); background: var(--bg-accent); }
+
+  /* ── Emoji ───────────────────────────────────────────────────────── */
+  .emoji { width: 22px; height: 22px; vertical-align: middle; }
+
+  /* ── Footer ──────────────────────────────────────────────────────── */
+  .footer {
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .footer-stat strong { color: var(--text-normal); }
+  .footer-spacer { flex: 1; }
+  .footer-brand {
+    font-size: 12px; font-weight: 600;
+    color: var(--brand); letter-spacing: .3px;
+  }
+
+  /* ── Search highlight ─────────────────────────────────────────────── */
+  mark {
+    background: rgba(250,166,26,.3);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  /* ── Scroll to bottom btn ─────────────────────────────────────────── */
+  #scroll-btn {
+    position: fixed;
+    bottom: 56px;
+    right: 24px;
+    background: var(--brand);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.4);
+    transition: background .15s, transform .1s;
+    z-index: 100;
+  }
+  #scroll-btn:hover { background: #4752c4; transform: scale(1.05); }
+  #scroll-btn.visible { display: flex; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Header -->
+  <div class="header">
+    <img class="guild-icon" src="assets/guild-icons/guild-icon.png" alt="">
+    <span class="guild-name">Lethal</span>
+    <div class="header-divider"></div>
+    <span class="channel-hash">#</span>
+    <span class="channel-name">guild-application-sti1ltyping</span>
+    <span class="channel-topic">Created at &lt;t:1778429012:f&gt;</span>
+    <div class="header-spacer"></div>
+    <span class="transcript-badge">Transcript</span>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar-wrap">
+    <input
+      id="search-input"
+      class="search-input"
+      type="text"
+      placeholder="Search messages…"
+      oninput="doSearch(this.value)"
+    >
+    <span id="search-count"></span>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages-pane" id="messages-pane">
+    <div class="message" id="msg-1503064965010161786"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-718493970652594217.png" alt="Tickety" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ffffff">Tickety</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="10 May 2026 16:03">10 May 2026 16:03</span></div>
+<div class="message-content"><span class="mention">@Alya is a cutie</span>, <span class="mention">@Admin</span>, <span class="mention">@Officer</span>, <span class="mention">@Manager</span>, <span class="mention">@Testers</span></div>
+<div class="embed" style="border-left-color:#2986cc">
+<div class="embed-title">Ticket Created</div>
+<div class="embed-description">Welcome <strong><span class="mention">@840587974000771072</span></strong>, thank you for applying to join the guild.<br><br>Please answer the following questions in brief -<br>1. Your IGN?<br>2. How active you are on BedWars?<br>3. How many wins you get per week?<br>4. How long have you been playing BedWars for?<br>5. How many guild coins you can donate every week (2 minigames coins = 1 guild coin)? <br><br><strong>Please be patient &amp; refrain from pinging anyone</strong>, unless it is necessary.</div>
+<div class="embed-footer"><img class="embed-footer-icon" src="assets/embeds/footer-icons/footer-icon-0.png"><span>Tickety | Tickety.top</span></div>
+</div>
+</div></div>
+<div class="message system-message" id="msg-1503064971557212171"><span class="system-icon">📌</span><span>📌 Tickety pinned a message to this channel.</span></div>
+<div class="message" id="msg-1503065023856251080"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 16:03">10 May 2026 16:03</span></div>
+<div class="message-content">mb for ping</div>
+</div></div>
+<div class="message  grouped" id="msg-1503065030256627792"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:03">16:03</div></div><div class="message-body"><div class="message-content">just testing</div>
+</div></div>
+<div class="message  grouped" id="msg-1503065327607484636"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:04">16:04</div></div><div class="message-body"></div></div>
+<div class="message" id="msg-1503065359832453141"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1248958414651134039.png" alt="meoweys" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#00ffff">meoweys</span><span class="message-timestamp" title="10 May 2026 16:05">10 May 2026 16:05</span></div>
+<div class="message-content">ok</div>
+</div></div>
+<div class="message  grouped" id="msg-1503065394737451242"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:05">16:05</div></div><div class="message-body"><div class="message-content">.</div>
+</div></div>
+<div class="message" id="msg-1503065512278622268"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 16:05">10 May 2026 16:05</span></div>
+<div class="message-content">image</div>
+<div class="attachment image-attachment"><img src="assets/attachments/test2/1503065512278622268-0-Screenshot_5388.png" alt="Screenshot_5388.png" loading="lazy" onclick="window.open('assets/attachments/test2/1503065512278622268-0-Screenshot_5388.png','_blank')"></div>
+</div></div>
+<div class="message  grouped" id="msg-1503065882258309160"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:07">16:07</div></div><div class="message-body"><div class="message-content">10mb+ vid file<span class="edited-tag">(edited)</span></div>
+<div class="attachment video-attachment"><video controls src=""></video></div>
+</div></div>
+<div class="message  grouped" id="msg-1503065945004970094"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:07">16:07</div></div><div class="message-body"></div></div>
+<div class="message  grouped" id="msg-1503065965699534860"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:07">16:07</div></div><div class="message-body"></div></div>
+<div class="message  grouped" id="msg-1503066410589356142"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:09">16:09</div></div><div class="message-body"><div class="message-content">emojis <br>💀😭🥺😔🔥😫🐬<img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1172559506757124126.png?size=32" alt="https://cdn.discordapp.com/emojis/1172559506757124126.png?size=32" loading="lazy">" alt=":l67smug:" title=":l67smug:">😋🥰<img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/771084045089898527.png?size=32" alt="https://cdn.discordapp.com/emojis/771084045089898527.png?size=32" loading="lazy">" alt=":gasm2:" title=":gasm2:">🥹🫁🥀<img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/884008269331451915.png?size=32" alt="https://cdn.discordapp.com/emojis/884008269331451915.png?size=32" loading="lazy">" alt=":AlyaThighs:" title=":AlyaThighs:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1212306836053561364.png?size=32" alt="https://cdn.discordapp.com/emojis/1212306836053561364.png?size=32" loading="lazy">" alt=":facepalm:" title=":facepalm:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/944161352266707004.png?size=32" alt="https://cdn.discordapp.com/emojis/944161352266707004.png?size=32" loading="lazy">" alt=":AlyaWow:" title=":AlyaWow:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/944161352266707004.png?size=32" alt="https://cdn.discordapp.com/emojis/944161352266707004.png?size=32" loading="lazy">" alt=":AlyaWow:" title=":AlyaWow:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/880113702211317760.png?size=32" alt="https://cdn.discordapp.com/emojis/880113702211317760.png?size=32" loading="lazy">" alt=":AlyaPeace:" title=":AlyaPeace:">🫂<img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/944161352186986556.png?size=32" alt="https://cdn.discordapp.com/emojis/944161352186986556.png?size=32" loading="lazy">" alt=":AlyaPout:" title=":AlyaPout:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/775848429133758534.png?size=32" alt="https://cdn.discordapp.com/emojis/775848429133758534.png?size=32" loading="lazy">" alt=":RemKiss:" title=":RemKiss:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/763158667918704640.gif?size=32" alt="https://cdn.discordapp.com/emojis/763158667918704640.gif?size=32" loading="lazy">" alt=":triggered:" title=":triggered:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1264184213478051870.gif?size=32" alt="https://cdn.discordapp.com/emojis/1264184213478051870.gif?size=32" loading="lazy">" alt=":Alyaomaygodo:" title=":Alyaomaygodo:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/819192514002550834.gif?size=32" alt="https://cdn.discordapp.com/emojis/819192514002550834.gif?size=32" loading="lazy">" alt=":OrigamiLick1:" title=":OrigamiLick1:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/819192555357995020.gif?size=32" alt="https://cdn.discordapp.com/emojis/819192555357995020.gif?size=32" loading="lazy">" alt=":OrigamiLick2:" title=":OrigamiLick2:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/932552555903483965.png?size=32" alt="https://cdn.discordapp.com/emojis/932552555903483965.png?size=32" loading="lazy">" alt=":ShidoPog:" title=":ShidoPog:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/744345896912945214.png?size=32" alt="https://cdn.discordapp.com/emojis/744345896912945214.png?size=32" loading="lazy">" alt=":shut:" title=":shut:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1498182899306991616.gif?size=32" alt="https://cdn.discordapp.com/emojis/1498182899306991616.gif?size=32" loading="lazy">" alt=":intense<em>crying:" title=":intense</em>crying:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1493824120670912643.png?size=32" alt="https://cdn.discordapp.com/emojis/1493824120670912643.png?size=32" loading="lazy">" alt=":124MinecraftIronIngot:" title=":124MinecraftIronIngot:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1493824208764010517.png?size=32" alt="https://cdn.discordapp.com/emojis/1493824208764010517.png?size=32" loading="lazy">" alt=":125MinecraftGoldIngot:" title=":125MinecraftGoldIngot:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1493824238358892704.png?size=32" alt="https://cdn.discordapp.com/emojis/1493824238358892704.png?size=32" loading="lazy">" alt=":129MinecraftDiamondAnimated:" title=":129MinecraftDiamondAnimated:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488452172642517003.png?size=32" alt="https://cdn.discordapp.com/emojis/1488452172642517003.png?size=32" loading="lazy">" alt=":16739ownergradient:" title=":16739ownergradient:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1116050366522474628.gif?size=32" alt="https://cdn.discordapp.com/emojis/1116050366522474628.gif?size=32" loading="lazy">" alt=":18:" title=":18:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1116050395429609522.gif?size=32" alt="https://cdn.discordapp.com/emojis/1116050395429609522.gif?size=32" loading="lazy">" alt=":18:" title=":18:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1116050395429609522.gif?size=32" alt="https://cdn.discordapp.com/emojis/1116050395429609522.gif?size=32" loading="lazy">" alt=":18:" title=":18:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1493824160265277571.png?size=32" alt="https://cdn.discordapp.com/emojis/1493824160265277571.png?size=32" loading="lazy">" alt=":410minecraft8:" title=":410minecraft8:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488452300245831780.png?size=32" alt="https://cdn.discordapp.com/emojis/1488452300245831780.png?size=32" loading="lazy">" alt=":64388adminyellow:" title=":64388adminyellow:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488452300245831780.png?size=32" alt="https://cdn.discordapp.com/emojis/1488452300245831780.png?size=32" loading="lazy">" alt=":64388adminyellow:" title=":64388adminyellow:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1479844246868463781.png?size=32" alt="https://cdn.discordapp.com/emojis/1479844246868463781.png?size=32" loading="lazy">" alt=":Europe:" title=":Europe:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1479844246868463781.png?size=32" alt="https://cdn.discordapp.com/emojis/1479844246868463781.png?size=32" loading="lazy">" alt=":Europe:" title=":Europe:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488458457173594152.png?size=32" alt="https://cdn.discordapp.com/emojis/1488458457173594152.png?size=32" loading="lazy">" alt=":Bot:" title=":Bot:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1479844326124159058.png?size=32" alt="https://cdn.discordapp.com/emojis/1479844326124159058.png?size=32" loading="lazy">" alt=":Asia:" title=":Asia:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1116976376084430860.gif?size=32" alt="https://cdn.discordapp.com/emojis/1116976376084430860.gif?size=32" loading="lazy">" alt=":Arrow:" title=":Arrow:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1479844391848775700.png?size=32" alt="https://cdn.discordapp.com/emojis/1479844391848775700.png?size=32" loading="lazy">" alt=":Africa:" title=":Africa:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488458874934788117.png?size=32" alt="https://cdn.discordapp.com/emojis/1488458874934788117.png?size=32" loading="lazy">" alt=":Admin:" title=":Admin:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488458874934788117.png?size=32" alt="https://cdn.discordapp.com/emojis/1488458874934788117.png?size=32" loading="lazy">" alt=":Admin:" title=":Admin:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488452520815890603.png?size=32" alt="https://cdn.discordapp.com/emojis/1488452520815890603.png?size=32" loading="lazy">" alt=":92648admingrey:" title=":92648admingrey:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1336738647671701566.gif?size=32" alt="https://cdn.discordapp.com/emojis/1336738647671701566.gif?size=32" loading="lazy">" alt=":Line:" title=":Line:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488459052987191436.png?size=32" alt="https://cdn.discordapp.com/emojis/1488459052987191436.png?size=32" loading="lazy">" alt=":Manager:" title=":Manager:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488458826825863228.png?size=32" alt="https://cdn.discordapp.com/emojis/1488458826825863228.png?size=32" loading="lazy">" alt=":Moderator:" title=":Moderator:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1488458268476182619.png?size=32" alt="https://cdn.discordapp.com/emojis/1488458268476182619.png?size=32" loading="lazy">" alt=":Nitro<em>Booster:" title=":Nitro</em>Booster:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1495855232771686440.png?size=32" alt="https://cdn.discordapp.com/emojis/1495855232771686440.png?size=32" loading="lazy">" alt=":ahhhh<em>ughhh:" title=":ahhhh</em>ughhh:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1495855805449113630.png?size=32" alt="https://cdn.discordapp.com/emojis/1495855805449113630.png?size=32" loading="lazy">" alt=":angry:" title=":angry:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1484561528203116707.png?size=32" alt="https://cdn.discordapp.com/emojis/1484561528203116707.png?size=32" loading="lazy">" alt=":angryfrieren:" title=":angryfrieren:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/798464855598170152.gif?size=32" alt="https://cdn.discordapp.com/emojis/798464855598170152.gif?size=32" loading="lazy">" alt=":buzzpinkheart:" title=":buzzpinkheart:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/819092776909537291.png?size=32" alt="https://cdn.discordapp.com/emojis/819092776909537291.png?size=32" loading="lazy">" alt=":c1:" title=":c1:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/819092768362201150.png?size=32" alt="https://cdn.discordapp.com/emojis/819092768362201150.png?size=32" loading="lazy">" alt=":c4:" title=":c4:"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/819092768362201150.png?size=32" alt="https://cdn.discordapp.com/emojis/819092768362201150.png?size=32" loading="lazy">" alt=":c4:" title=":c4:"></div>
+</div></div>
+<div class="message  grouped" id="msg-1503066431808340149"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:09">16:09</div></div><div class="message-body"><div class="message-content">reactions</div>
+<div class="reactions"><div class="reaction"><span class="reaction-emoji">💀</span><span class="reaction-count">1</span></div><div class="reaction"><span class="reaction-emoji">😭</span><span class="reaction-count">1</span></div><div class="reaction"><span class="reaction-emoji">🥺</span><span class="reaction-count">1</span></div><div class="reaction"><span class="reaction-emoji">😫</span><span class="reaction-count">1</span></div><div class="reaction"><span class="reaction-emoji">🐬</span><span class="reaction-count">1</span></div><div class="reaction"><span class="reaction-emoji">😋</span><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-1212306836053561364.png" alt="emoji"><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-763158667918704640.gif" alt="emoji"><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-811665342023073882.gif" alt="emoji"><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-1213005346159988756.png" alt="emoji"><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-769114720501235713.png" alt="emoji"><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-769114719021170718.png" alt="emoji"><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-769114714449117184.png" alt="emoji"><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-763131738196934678.png" alt="emoji"><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-763131716323508264.png" alt="emoji"><span class="reaction-count">1</span></div></div></div></div>
+<div class="message  grouped" id="msg-1503066521180700813"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:09">16:09</div></div><div class="message-body"><div class="message-content">super reaction</div>
+<div class="reactions"><div class="reaction"><span class="reaction-emoji">😭</span><span class="reaction-count">1</span></div><div class="reaction"><img class="reaction-emoji" src="assets/emoji/emoji-811665342023073882.gif" alt="emoji"><span class="reaction-count">1</span></div></div></div></div>
+<div class="message" id="msg-1503066622930194573"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1248958414651134039.png" alt="meoweys" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#00ffff">meoweys</span><span class="message-timestamp" title="10 May 2026 16:10">10 May 2026 16:10</span></div>
+<div class="message-content">tf 😭</div>
+</div></div>
+<div class="message" id="msg-1503066651585806496"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 16:10">10 May 2026 16:10</span></div>
+<div class="message-content">?record 60 test2</div>
+</div></div>
+<div class="message" id="msg-1503066700516687904"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 16:10">10 May 2026 16:10</span></div>
+<a class="reply-context" href="https://discord.com/channels/1116021935281815604/1503064960102695013/1503066622930194573" target="_blank"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meoweys</span> <span class="reply-text">tf 😭</span></div></a>
+<div class="message-content">it has a purpose 😭<span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message" id="msg-1503066899532087479"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-718493970652594217.png" alt="Tickety" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ffffff">Tickety</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="10 May 2026 16:11">10 May 2026 16:11</span></div>
+</div></div>
+<div class="message" id="msg-1503067421345317114"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="Alya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#e63030">Alya is a cutie</span><span class="message-timestamp" title="10 May 2026 16:13">10 May 2026 16:13</span></div>
+<div class="message-content">okay damn i didn&#x27;t thought it would be able to reacord all this</div>
+<div class="attachment image-attachment"><img src="assets/attachments/test2/1503067421345317114-0-image.png" alt="image.png" loading="lazy" onclick="window.open('assets/attachments/test2/1503067421345317114-0-image.png','_blank')"></div>
+</div></div>
+<div class="message  grouped" id="msg-1503067570591502437"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:13">16:13</div></div><div class="message-body"><div class="message-content">ah no stickers tho</div>
+</div></div>
+<div class="message  grouped" id="msg-1503067605332787351"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:14">16:14</div></div><div class="message-body"><div class="message-content">that&#x27;s an L</div>
+</div></div>
+<div class="message  grouped" id="msg-1503067879262650369"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="10 May 2026 16:15">16:15</div></div><div class="message-body"><div class="message-content">?record test2 100</div>
+</div></div>
+<div class="message" id="msg-1503067881858928870"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#a9c9ff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="10 May 2026 16:15">10 May 2026 16:15</span></div>
+<div class="message-content">📄 Fetching and recording up to 100 messages…</div>
+</div></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="footer-stat">📨 <strong>23</strong> messages</span>
+    <span class="footer-stat">📅 Exported <strong>10 May 2026 at 16:15 UTC</strong></span>
+    <span class="footer-stat" id="exported-by-stat" style="display:' + (exportedByVisible ? 'inline' : 'none') + '">
+      👤 Exported by <strong>sti1ltyping</strong>
+    </span>
+    <span class="footer-spacer"></span>
+    <span class="footer-brand">discord_transcript</span>
+  </div>
+</div>
+
+<!-- Scroll to bottom -->
+<button id="scroll-btn" title="Scroll to bottom" onclick="scrollToBottom()">↓</button>
+
+<script>
+// ── Search ──────────────────────────────────────────────────────────────
+let originalHTML = {};
+const pane = document.getElementById('messages-pane');
+const countEl = document.getElementById('search-count');
+
+function escapeRE(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function doSearch(q) {
+  // Restore original content first
+  document.querySelectorAll('.message[data-orig]').forEach(el => {
+    el.innerHTML = el.dataset.orig;
+    delete el.dataset.orig;
+  });
+  document.querySelectorAll('.message').forEach(el => {
+    el.classList.remove('highlight');
+  });
+
+  if (!q.trim()) {
+    countEl.textContent = '';
+    return;
+  }
+
+  const re = new RegExp(escapeRE(q.trim()), 'gi');
+  let matches = 0;
+  let first = null;
+
+  document.querySelectorAll('.message').forEach(el => {
+    const body = el.querySelector('.message-body') || el;
+    const text = body.innerText;
+    if (re.test(text)) {
+      matches++;
+      el.classList.add('highlight');
+      if (!first) first = el;
+      // Highlight text nodes
+      if (!el.dataset.orig) el.dataset.orig = el.innerHTML;
+      highlightNode(el, re);
+    }
+  });
+
+  countEl.textContent = matches ? `${matches} result${matches !== 1 ? 's' : ''}` : 'No results';
+  if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function highlightNode(root, re) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    const parent = node.parentNode;
+    if (!parent || ['SCRIPT','STYLE','CODE','PRE'].includes(parent.tagName)) return;
+    const txt = node.textContent;
+    if (!re.test(txt)) return;
+    re.lastIndex = 0;
+    const span = document.createElement('span');
+    span.innerHTML = txt.replace(re, m => `<mark>${m}</mark>`);
+    parent.replaceChild(span, node);
+  });
+}
+
+// ── Scroll-to-bottom button ────────────────────────────────────────────
+function scrollToBottom() {
+  pane.scrollTo({ top: pane.scrollHeight, behavior: 'smooth' });
+}
+
+const scrollBtn = document.getElementById('scroll-btn');
+pane.addEventListener('scroll', () => {
+  const distFromBottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight;
+  scrollBtn.classList.toggle('visible', distFromBottom > 300);
+});
+
+// ── Keyboard shortcut: Ctrl+F / Cmd+F focuses search ──────────────────
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+  }
+});
+
+// ── Initial scroll to bottom ───────────────────────────────────────────
+window.addEventListener('load', () => {
+  pane.scrollTop = pane.scrollHeight;
+});
+</script>
+</body>
+</html>
