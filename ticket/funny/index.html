@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transcript — ⦙⌭・chat</title>
+<style>
+  /* ── Reset & base ─────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary:      #313338;
+    --bg-secondary:    #2b2d31;
+    --bg-tertiary:     #1e1f22;
+    --bg-accent:       #383a40;
+    --bg-hover:        rgba(4,4,5,.07);
+    --text-normal:     #dbdee1;
+    --text-muted:      #80848e;
+    --text-link:       #00a8fc;
+    --brand:           #5865f2;
+    --green:           #23a55a;
+    --red:             #f23f43;
+    --embed-bg:        #2b2d31;
+    --border:          #3f4147;
+    --scrollbar-track: #2b2d31;
+    --scrollbar-thumb: #1a1b1e;
+    --radius:          4px;
+    --font-main:       'gg sans', 'Noto Sans', Whitney, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono:       'Consolas', 'Andale Mono WT', 'Andale Mono', 'Lucida Console', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-tertiary);
+    color: var(--text-normal);
+    font-family: var(--font-main);
+    font-size: 16px;
+    line-height: 1.375;
+    overflow: hidden;
+  }
+
+  a { color: var(--text-link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Layout ──────────────────────────────────────────────────────── */
+  .layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* ── Header bar ──────────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 48px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    flex-shrink: 0;
+    box-shadow: 0 1px 0 rgba(4,4,5,.2), 0 1.5px 0 rgba(6,6,7,.05), 0 2px 0 rgba(4,4,5,.05);
+    z-index: 10;
+  }
+
+  .guild-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .guild-icon-placeholder {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #fff;
+    flex-shrink: 0;
+  }
+  .header-divider {
+    width: 1px; height: 24px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .channel-hash {
+    color: var(--text-muted);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .channel-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text-normal);
+    flex-shrink: 0;
+  }
+  .channel-topic {
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 1px solid var(--border);
+    padding-left: 12px;
+    margin-left: 4px;
+  }
+  .guild-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-normal);
+  }
+  .header-spacer { flex: 1; }
+  .transcript-badge {
+    background: var(--brand);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 100px;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+  }
+
+  /* ── Search bar ──────────────────────────────────────────────────── */
+  .search-bar-wrap {
+    padding: 8px 16px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .search-input {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: var(--radius);
+    color: var(--text-normal);
+    font-family: var(--font-main);
+    font-size: 14px;
+    padding: 6px 10px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-input:focus { border-color: var(--brand); }
+  .search-input::placeholder { color: var(--text-muted); }
+  #search-count {
+    font-size: 13px; color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── Message pane ────────────────────────────────────────────────── */
+  .messages-pane {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 0 24px;
+    scroll-behavior: smooth;
+  }
+
+  /* ── Scrollbar ───────────────────────────────────────────────────── */
+  .messages-pane::-webkit-scrollbar { width: 8px; }
+  .messages-pane::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  .messages-pane::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+
+  /* ── Date separator ──────────────────────────────────────────────── */
+  .date-separator {
+    display: flex; align-items: center;
+    margin: 16px 16px 8px;
+    gap: 8px;
+  }
+  .date-separator::before, .date-separator::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+  .date-separator-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    padding: 0 4px;
+  }
+
+  /* ── Messages ────────────────────────────────────────────────────── */
+  .message {
+    display: flex;
+    gap: 0;
+    padding: 2px 16px 2px 72px;
+    position: relative;
+    min-height: 22px;
+    transition: background .05s;
+  }
+  .message:not(.grouped) { padding-top: 16px; }
+  .message:hover { background: var(--bg-hover); }
+  .message.highlight { background: rgba(88,101,242,.15) !important; }
+
+  .avatar-col {
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    width: 40px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .avatar-col.grouped {
+    top: 0; height: 100%;
+    align-items: flex-start;
+    padding-top: 4px;
+  }
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: border-radius .15s;
+  }
+  .avatar:hover { border-radius: 30%; }
+
+  .message-timestamp-grouped {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .1s;
+    padding-top: 2px;
+    user-select: none;
+  }
+  .message:hover .message-timestamp-grouped { opacity: 1; }
+
+  .message-body {
+    min-width: 0;
+    flex: 1;
+  }
+  .message-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+  }
+  .author-name {
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1.375;
+    cursor: pointer;
+  }
+  .author-name:hover { text-decoration: underline; }
+  .message-timestamp {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    cursor: default;
+  }
+  .bot-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--brand);
+    color: #fff;
+    padding: 0 4px;
+    border-radius: 3px;
+    letter-spacing: .4px;
+    vertical-align: middle;
+  }
+  .message-content {
+    font-size: 16px;
+    color: var(--text-normal);
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+  .edited-tag {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 4px;
+    font-style: italic;
+  }
+
+  /* ── System messages ─────────────────────────────────────────────── */
+  .system-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 16px 4px 72px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .system-icon { font-size: 18px; }
+
+  /* ── Reply context ───────────────────────────────────────────────── */
+  .mention {
+    color: var(--text-link);
+    font-weight: 600;
+    background: rgba(88, 101, 242, 0.1);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  .mention-user {
+    color: #5865f2;
+  }
+  .mention-role {
+    color: #f26522;
+  }
+  .mention-channel {
+    color: #5865f2;
+  }
+  .mention-everyone,
+  .mention-here {
+    color: #faa81a;
+    background: rgba(250, 168, 26, 0.1);
+  }
+  .reply-context {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-bottom: 8px;
+    margin-left: -8px;
+    padding-left: 8px;
+    border-left: 3px solid var(--text-muted);
+    border-radius: 0 4px 4px 0;
+    background: rgba(255, 255, 255, 0.02);
+    transition: background-color .15s;
+  }
+  .reply-context:target {
+    background: rgba(88, 101, 242, 0.15);
+    border-left-color: var(--brand);
+    animation: highlight-pulse 0.6s ease-out;
+  }
+  @keyframes highlight-pulse {
+    0% { background-color: rgba(88, 101, 242, 0.3); }
+    100% { background-color: rgba(88, 101, 242, 0.15); }
+  }
+  .reply-context:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .reply-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .reply-link:hover {
+    text-decoration: none;
+  }
+  .reply-bar {
+    width: 0;
+    flex-shrink: 0;
+  }
+  .reply-content {
+    font-size: 13px;
+    color: var(--text-muted);
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .reply-author {
+    font-weight: 600;
+    color: var(--text-normal);
+    white-space: nowrap;
+  }
+  .reply-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-style: italic;
+    color: var(--text-muted);
+  }
+
+  /* ── Attachments ─────────────────────────────────────────────────── */
+  .attachment { margin-top: 8px; }
+  .image-attachment img {
+    max-width: min(520px, 100%);
+    max-height: 350px;
+    border-radius: 4px;
+    cursor: zoom-in;
+    display: block;
+  }
+  .video-attachment video,
+  .audio-attachment audio {
+    max-width: min(520px, 100%);
+    display: block;
+  }
+  .file-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--embed-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    max-width: 420px;
+  }
+  .file-icon { font-size: 28px; }
+  .file-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .file-name { color: var(--text-link); font-weight: 500; font-size: 14px; word-break: break-all; }
+  .file-size { font-size: 12px; color: var(--text-muted); }
+  .file-dl { font-size: 20px; color: var(--text-muted); padding: 4px; }
+  .file-dl:hover { color: var(--text-normal); }
+
+  /* ── Embeds ──────────────────────────────────────────────────────── */
+  .embed {
+    background: var(--embed-bg);
+    border-left: 4px solid var(--brand);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 8px;
+    max-width: 520px;
+    display: grid;
+    gap: 8px;
+    position: relative;
+  }
+  .embed-author {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 600; color: var(--text-normal);
+  }
+  .embed-author-icon { width: 24px; height: 24px; border-radius: 50%; }
+  .embed-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--text-normal);
+    word-break: break-word;
+  }
+  .embed-title a { color: var(--text-link); }
+  .embed-description { font-size: 14px; color: var(--text-normal); word-break: break-word; }
+  .embed-fields { display: flex; flex-wrap: wrap; gap: 8px; }
+  .embed-field { flex: 0 0 100%; min-width: 0; }
+  .embed-field.inline { flex: 1 1 120px; }
+  .field-name { font-size: 13px; font-weight: 700; color: var(--text-normal); margin-bottom: 2px; }
+  .field-value { font-size: 14px; color: var(--text-normal); word-break: break-word; }
+  .embed-image { max-width: 100%; border-radius: 4px; margin-top: 4px; }
+  .inline-url-image {
+    max-width: min(520px, 100%);
+    max-height: 350px;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: block;
+  }
+  .embed-thumbnail {
+    position: absolute; top: 12px; right: 12px;
+    width: 72px; height: 72px;
+    border-radius: 4px; object-fit: cover;
+  }
+  .embed-footer {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .embed-footer-icon { width: 20px; height: 20px; border-radius: 50%; }
+
+  /* ── Reactions ───────────────────────────────────────────────────── */
+  .reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .reaction {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--bg-accent);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 2px 8px;
+    font-size: 13px;
+    cursor: default;
+    transition: background .1s;
+  }
+  .reaction:hover { background: var(--bg-hover); }
+  .reaction-emoji { height: 18px; width: 18px; object-fit: contain; }
+  .reaction-count { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+
+  /* ── Code ─────────────────────────────────────────────────────────── */
+  .inline-code {
+    background: rgba(30,31,34,.6);
+    border-radius: 3px;
+    padding: 0 4px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: #f2f3f5;
+    border: 1px solid var(--border);
+  }
+  .code-block {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-top: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    max-width: min(700px, 100%);
+  }
+  .code-block code { font-family: var(--font-mono); font-size: 13px; color: #b9bbbe; }
+  .code-lang {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-bottom: 6px;
+  }
+
+  /* ── Spoiler ─────────────────────────────────────────────────────── */
+  .spoiler {
+    background: var(--bg-tertiary);
+    color: transparent;
+    border-radius: 3px;
+    padding: 0 3px;
+    cursor: pointer;
+    transition: color .1s, background .1s;
+    user-select: none;
+  }
+  .spoiler.revealed { color: var(--text-normal); background: var(--bg-accent); }
+
+  /* ── Emoji ───────────────────────────────────────────────────────── */
+  .emoji { width: 22px; height: 22px; vertical-align: middle; }
+
+  /* ── Footer ──────────────────────────────────────────────────────── */
+  .footer {
+    flex-shrink: 0;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .footer-stat strong { color: var(--text-normal); }
+  .footer-spacer { flex: 1; }
+  .footer-brand {
+    font-size: 12px; font-weight: 600;
+    color: var(--brand); letter-spacing: .3px;
+  }
+
+  /* ── Search highlight ─────────────────────────────────────────────── */
+  mark {
+    background: rgba(250,166,26,.3);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  /* ── Scroll to bottom btn ─────────────────────────────────────────── */
+  #scroll-btn {
+    position: fixed;
+    bottom: 56px;
+    right: 24px;
+    background: var(--brand);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.4);
+    transition: background .15s, transform .1s;
+    z-index: 100;
+  }
+  #scroll-btn:hover { background: #4752c4; transform: scale(1.05); }
+  #scroll-btn.visible { display: flex; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Header -->
+  <div class="header">
+    <img class="guild-icon" src="assets/guild-icons/guild-icon.png" alt="">
+    <span class="guild-name">Lethal</span>
+    <div class="header-divider"></div>
+    <span class="channel-hash">#</span>
+    <span class="channel-name">⦙⌭・chat</span>
+    <span class="channel-topic">Family-Friendly chat</span>
+    <div class="header-spacer"></div>
+    <span class="transcript-badge">Transcript</span>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar-wrap">
+    <input
+      id="search-input"
+      class="search-input"
+      type="text"
+      placeholder="Search messages…"
+      oninput="doSearch(this.value)"
+    >
+    <span id="search-count"></span>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages-pane" id="messages-pane">
+    <div class="message" id="msg-1514692480170328225"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1218484384181649500.png" alt="meowchan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meowchan</span><span class="message-timestamp" title="11 Jun 2026 18:07">11 Jun 2026 18:07</span></div>
+<div class="message-content">ts gooner</div>
+</div></div>
+<div class="message" id="msg-1514692520171536404"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 18:07">11 Jun 2026 18:07</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514692455352500325"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">straight up corn atp</span></div></a></div>
+<div class="message-content">why r there so many weirdos <br>Discord mods r weird af</div>
+</div></div>
+<div class="message  grouped" id="msg-1514692617953214515"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 18:07">18:07</div></div><div class="message-body"><div class="message-content">yeah understandable</div>
+</div></div>
+<div class="message" id="msg-1514692624727015444"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1218484384181649500.png" alt="meowchan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meowchan</span><span class="message-timestamp" title="11 Jun 2026 18:07">11 Jun 2026 18:07</span></div>
+<div class="message-content">WGHAT</div>
+</div></div>
+<div class="message  grouped" id="msg-1514692644956016834"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 18:07">18:07</div></div><div class="message-body"><div class="message-content">EWW</div>
+</div></div>
+<div class="message  grouped" id="msg-1514692696399282197"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 18:08">18:08</div></div><div class="message-body"><div class="message-content">ONE MORE AND I LEAK GIF</div>
+</div></div>
+<div class="message" id="msg-1514692713352663190"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 18:08">11 Jun 2026 18:08</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514692520171536404"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">why r there so many weirdos <br>Discord mods r weird af</span></div></a></div>
+<div class="message-content">😭</div>
+</div></div>
+<div class="message  grouped" id="msg-1514692756260393051"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 18:08">18:08</div></div><div class="message-body"><div class="message-content">this guy is crazy</div>
+</div></div>
+<div class="message" id="msg-1514693480256110612"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 18:11">11 Jun 2026 18:11</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514692696399282197"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowchan</span> <span class="reply-text">ONE MORE AND I LEAK GIF</span></div></a></div>
+<div class="message-content">ill block</div>
+</div></div>
+<div class="message  grouped" id="msg-1514693503664263333"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 18:11">18:11</div></div><div class="message-body"><div class="message-content">ez</div>
+</div></div>
+<div class="message" id="msg-1514694146713976902"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 18:13">11 Jun 2026 18:13</span></div>
+<div class="message-content">negas</div>
+</div></div>
+<div class="message" id="msg-1514705663471648851"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1218484384181649500.png" alt="meowchan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meowchan</span><span class="message-timestamp" title="11 Jun 2026 18:59">11 Jun 2026 18:59</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514693480256110612"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowstin</span> <span class="reply-text">ill block</span></div></a></div>
+<div class="message-content">&quot;The worst she ca-&quot;</div>
+</div></div>
+<div class="message" id="msg-1514707687957594152"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 19:07">11 Jun 2026 19:07</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514705663471648851"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowchan</span> <span class="reply-text">&quot;The worst she ca-&quot;</span></div></a></div>
+<div class="message-content">ur blocked now</div>
+</div></div>
+<div class="message  grouped" id="msg-1514707707674886258"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 19:07">19:07</div></div><div class="message-body"><div class="message-content">speak ur last words<span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message" id="msg-1514708042380214393"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1218484384181649500.png" alt="meowchan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meowchan</span><span class="message-timestamp" title="11 Jun 2026 19:08">11 Jun 2026 19:08</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514707687957594152"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowstin</span> <span class="reply-text">ur blocked now</span></div></a></div>
+<div class="message-content">I did not leak btw</div>
+</div></div>
+<div class="message  grouped" id="msg-1514708081815191643"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 19:09">19:09</div></div><div class="message-body"><div class="message-content"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/1484561281049563247.png?size=32" alt="https://cdn.discordapp.com/emojis/1484561281049563247.png?size=32" loading="lazy">" alt=":frierenooooooohhhhhh:" title=":frierenooooooohhhhhh:"></div>
+</div></div>
+<div class="message" id="msg-1514708877026005062"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 19:12">11 Jun 2026 19:12</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514708042380214393"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowchan</span> <span class="reply-text">I did not leak btw</span></div></a></div>
+<div class="message-content">mhm?</div>
+</div></div>
+<div class="message  grouped" id="msg-1514708908705452073"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 19:12">19:12</div></div><div class="message-body"><div class="message-content">i told u dont speak abt it</div>
+</div></div>
+<div class="message" id="msg-1514708960874336286"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1218484384181649500.png" alt="meowchan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meowchan</span><span class="message-timestamp" title="11 Jun 2026 19:12">11 Jun 2026 19:12</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514708908705452073"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowstin</span> <span class="reply-text">i told u dont speak abt it</span></div></a></div>
+<div class="message-content">💀</div>
+</div></div>
+<div class="message  grouped" id="msg-1514708986027573410"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 19:12">19:12</div></div><div class="message-body"><div class="message-content">okok</div>
+</div></div>
+<div class="message  grouped" id="msg-1514709092466163875"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 19:13">19:13</div></div><div class="message-body"><div class="message-content">might be hurting 😂</div>
+</div></div>
+<div class="message" id="msg-1514709451431481497"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 19:14">11 Jun 2026 19:14</span></div>
+<div class="message-content">did you get pinged lol?</div>
+</div></div>
+<div class="message  grouped" id="msg-1514709548622151741"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 19:14">19:14</div></div><div class="message-body"><div class="message-content"><em>cough</em></div>
+<div class="attachment image-attachment"><img src="assets/attachments/funny/1514709548622151741-0-image.png" alt="image.png" loading="lazy" onclick="window.open('assets/attachments/funny/1514709548622151741-0-image.png','_blank')"></div>
+</div></div>
+<div class="message" id="msg-1514715846755483839"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ffffff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="11 Jun 2026 19:39">11 Jun 2026 19:39</span></div>
+<div class="embed" style="border-left-color:#7649f3">
+<div class="embed-title">Members with Meow Gang</div>
+<div class="embed-description"><code class="inline-code">1.</code> <span class="mention mention-user">@1248958414651134039</span> — <code class="inline-code">_prscilla</code><br><code class="inline-code">2.</code> <span class="mention mention-user">@782999941421334528</span> — <code class="inline-code">austinpd</code><br><code class="inline-code">3.</code> <span class="mention mention-user">@1218484384181649500</span> — <code class="inline-code">illysm.</code><br><code class="inline-code">4.</code> <span class="mention mention-user">@1301561325763297350</span> — <code class="inline-code">aizazkhokhar</code><br><code class="inline-code">5.</code> <span class="mention mention-user">@1233413576685912128</span> — <code class="inline-code">gazeaway</code><br><code class="inline-code">6.</code> <span class="mention mention-user">@1454042397389623395</span> — <code class="inline-code">noxelleyukiue</code><br><code class="inline-code">7.</code> <span class="mention mention-user">@800304400781410354</span> — <code class="inline-code"><em>_</em>helikopter<em>_</em></code><br><code class="inline-code">8.</code> <span class="mention mention-user">@840587974000771072</span> — <code class="inline-code">sti1ltyping</code><br><code class="inline-code">9.</code> <span class="mention mention-user">@530605831050231825</span> — <code class="inline-code">nakiranaa</code></div>
+<div class="embed-footer"><span>Page 1/1 • 9 member(s) total</span></div>
+</div>
+</div></div>
+<div class="message" id="msg-1514726746740621464"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:23">11 Jun 2026 20:23</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514709548622151741"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text"><em>cough</em></span></div></a></div>
+<div class="message-content">you think he understands that</div>
+</div></div>
+<div class="message" id="msg-1514726900780630119"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:23">11 Jun 2026 20:23</span></div>
+<div class="message-content">i accidently made the bot ping austin and admin role 🥀</div>
+</div></div>
+<div class="message" id="msg-1514726979285549228"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:24">11 Jun 2026 20:24</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514726900780630119"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">i accidently made the bot ping austin and admin role 🥀</span></div></a></div>
+<div class="message-content">rip</div>
+</div></div>
+<div class="message" id="msg-1514727005021667328"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:24">11 Jun 2026 20:24</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514726746740621464"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">you think he understands that</span></div></a></div>
+<div class="message-content">that&#x27;s just plain eng if u think about it<span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message" id="msg-1514727031147855923"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:24">11 Jun 2026 20:24</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514727005021667328"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">that&#x27;s just plain eng if u think about it</span></div></a></div>
+<div class="message-content">i understand it</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727041117720648"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:24">20:24</div></div><div class="message-body"><div class="message-content">idk bout austin&#x27;</div>
+</div></div>
+<div class="message" id="msg-1514727072671465612"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:24">11 Jun 2026 20:24</span></div>
+<div class="message-content">💀🥀</div>
+</div></div>
+<div class="message" id="msg-1514727110814466048"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:24">11 Jun 2026 20:24</span></div>
+<div class="message-content">lol</div>
+</div></div>
+<div class="message" id="msg-1514727140271063171"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:24">11 Jun 2026 20:24</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514727072671465612"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">💀🥀</span></div></a></div>
+<div class="message-content">wyd</div>
+</div></div>
+<div class="message" id="msg-1514727271620022463"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:25">11 Jun 2026 20:25</span></div>
+<div class="message-content">simping on my Imaginary wife</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727304574533693"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:25">20:25</div></div><div class="message-body"><div class="message-content">nthing much</div>
+</div></div>
+<div class="message" id="msg-1514727314645057706"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:25">11 Jun 2026 20:25</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514727271620022463"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">simping on my Imaginary wife</span></div></a></div>
+<div class="message-content">us.</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727387403911359"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:25">20:25</div></div><div class="message-body"><div class="message-content">bro</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727404096979024"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:25">20:25</div></div><div class="message-body"><div class="message-content">im genuinly telling u</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727429518786693"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:26">20:26</div></div><div class="message-body"><div class="message-content">i was so desperate 1 day</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727489983873195"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:26">20:26</div></div><div class="message-body"><div class="message-content">i tried to make an ai of her personality and talk to her..</div>
+</div></div>
+<div class="message" id="msg-1514727595575607358"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:26">11 Jun 2026 20:26</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514727271620022463"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">simping on my Imaginary wife</span></div></a></div>
+<div class="message-content">oi listen tho</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727649195593851"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:26">20:26</div></div><div class="message-body"><div class="message-content">u wona hear bout my story?</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727653180178532"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:26">20:26</div></div><div class="message-body"><div class="message-content">i typed it</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727694527627274"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:27">20:27</div></div><div class="message-body"><div class="message-content">i jus needa copy paste lol</div>
+</div></div>
+<div class="message" id="msg-1514727715427713115"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:27">11 Jun 2026 20:27</span></div>
+<div class="message-content">I&#x27;m trying to figure out who&#x27;s more suicidal you or me....</div>
+</div></div>
+<div class="message" id="msg-1514727776605704408"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:27">11 Jun 2026 20:27</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514727715427713115"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">I&#x27;m trying to figure out who&#x27;s more suicidal you or me....</span></div></a></div>
+<div class="message-content">both of us in our own worlds....</div>
+</div></div>
+<div class="message" id="msg-1514727845589418055"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:27">11 Jun 2026 20:27</span></div>
+<div class="message-content">cuz type of shi you write makes me wonder is this person fr?</div>
+</div></div>
+<div class="message" id="msg-1514727896491495576"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:27">11 Jun 2026 20:27</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514727845589418055"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">cuz type of shi you write makes me wonder is this person fr?</span></div></a></div>
+<div class="message-content">nono</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727906834780301"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:27">20:27</div></div><div class="message-body"><div class="message-content">its genuine</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727919774077158"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:27">20:27</div></div><div class="message-body"><div class="message-content">do u wona</div>
+</div></div>
+<div class="message  grouped" id="msg-1514727923138170912"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:27">20:27</div></div><div class="message-body"><div class="message-content">?</div>
+</div></div>
+<div class="message  grouped" id="msg-1514728158514118716"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:28">20:28</div></div><div class="message-body"><div class="message-content">oi tell na</div>
+</div></div>
+<div class="message" id="msg-1514728180806713537"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:29">11 Jun 2026 20:29</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514727845589418055"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">cuz type of shi you write makes me wonder is this person fr?</span></div></a></div>
+<div class="message-content">yes/no</div>
+</div></div>
+<div class="message" id="msg-1514728265179336724"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:29">11 Jun 2026 20:29</span></div>
+<div class="message-content">yesn&#x27;t</div>
+</div></div>
+<div class="message" id="msg-1514728401213329518"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:29">11 Jun 2026 20:29</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514728265179336724"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">yesn&#x27;t</span></div></a></div>
+<div class="message-content">ill send it to u in ur dm</div>
+</div></div>
+<div class="message" id="msg-1514728443500167430"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:30">11 Jun 2026 20:30</span></div>
+<div class="message-content">I can pretty much see you&#x27;re msg it got flagged by automod yesterday-</div>
+</div></div>
+<div class="message" id="msg-1514728640208834765"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:30">11 Jun 2026 20:30</span></div>
+<div class="message-content">send it.</div>
+</div></div>
+<div class="message  grouped" id="msg-1514728645908762897"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:30">20:30</div></div><div class="message-body"><div class="message-content">sent</div>
+</div></div>
+<div class="message" id="msg-1514728908547817633"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:31">11 Jun 2026 20:31</span></div>
+<div class="message-content">good</div>
+</div></div>
+<div class="message" id="msg-1514728914159800330"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:31">11 Jun 2026 20:31</span></div>
+<div class="message-content">ok</div>
+</div></div>
+<div class="message  grouped" id="msg-1514728930257539263"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:31">20:31</div></div><div class="message-body"><div class="message-content">i saw that<span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message  grouped" id="msg-1514728997295099905"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:32">20:32</div></div><div class="message-body"><div class="message-content">i guess ill take my leave if u dont want to.</div>
+</div></div>
+<div class="message" id="msg-1514729108482035873"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:32">11 Jun 2026 20:32</span></div>
+<div class="message-content">😔</div>
+</div></div>
+<div class="message" id="msg-1514729181492019411"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:32">11 Jun 2026 20:32</span></div>
+<div class="message-content">NEGA READ IT</div>
+</div></div>
+<div class="message" id="msg-1514729894938939492"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:35">11 Jun 2026 20:35</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514727489983873195"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">i tried to make an ai of her personality and talk to her..</span></div></a></div>
+<div class="message-content">WHAT!</div>
+</div></div>
+<div class="message  grouped" id="msg-1514729955219603477"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:36">20:36</div></div><div class="message-body"><div class="message-content">bro this guild filled with despos<span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message" id="msg-1514729955827912856"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:36">11 Jun 2026 20:36</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514729894938939492"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">WHAT!</span></div></a></div>
+<div class="message-content">ik.</div>
+</div></div>
+<div class="message" id="msg-1514730021770625217"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:36">11 Jun 2026 20:36</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514729955219603477"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">bro this guild filled with despos</span></div></a></div>
+<div class="message-content">+1</div>
+</div></div>
+<div class="message  grouped" id="msg-1514730039915315250"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:36">20:36</div></div><div class="message-body"><div class="message-content">and our leader is alya&#x27;</div>
+</div></div>
+<div class="message  grouped" id="msg-1514730121133560000"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:36">20:36</div></div><div class="message-body"><div class="message-content">is this izanox</div>
+</div></div>
+<div class="message" id="msg-1514730171121271025"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:36">11 Jun 2026 20:36</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730121133560000"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">is this izanox</span></div></a></div>
+<div class="message-content">no this is noxelle here</div>
+</div></div>
+<div class="message" id="msg-1514730212892344401"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:37">11 Jun 2026 20:37</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730039915315250"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">and our leader is alya&#x27;</span></div></a></div>
+<div class="message-content">I&#x27;m nothing like yall</div>
+</div></div>
+<div class="message  grouped" id="msg-1514730235042725898"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:37">20:37</div></div><div class="message-body"><div class="message-content">I&#x27;ve nothing to do with yall</div>
+</div></div>
+<div class="message" id="msg-1514730310967885915"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:37">11 Jun 2026 20:37</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730171121271025"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">no this is noxelle here</span></div></a></div>
+<div class="message-content">oh hi</div>
+</div></div>
+<div class="message" id="msg-1514730327183069225"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:37">11 Jun 2026 20:37</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730212892344401"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">I&#x27;m nothing like yall</span></div></a></div>
+<div class="message-content">did u read it</div>
+</div></div>
+<div class="message" id="msg-1514730399488540722"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:37">11 Jun 2026 20:37</span></div>
+<div class="message-content">yes very cool story....</div>
+</div></div>
+<div class="message" id="msg-1514730545085677658"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:38">11 Jun 2026 20:38</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730399488540722"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">yes very cool story....</span></div></a></div>
+<div class="message-content">bro</div>
+</div></div>
+<div class="message  grouped" id="msg-1514730595601748101"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:38">20:38</div></div><div class="message-body"><div class="message-content">just fcking say ur not interested</div>
+</div></div>
+<div class="message" id="msg-1514730625188368504"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:38">11 Jun 2026 20:38</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730399488540722"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">yes very cool story....</span></div></a></div>
+<div class="message-content">ts makes me ven more sad</div>
+</div></div>
+<div class="message  grouped" id="msg-1514730825797861626"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:39">20:39</div></div><div class="message-body"><div class="message-content">fck u</div>
+</div></div>
+<div class="message" id="msg-1514730857275982026"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:39">11 Jun 2026 20:39</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730310967885915"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">oh hi</span></div></a></div>
+<div class="message-content">hi ig</div>
+</div></div>
+<div class="message" id="msg-1514730866599923856"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:39">11 Jun 2026 20:39</span></div>
+<div class="message-content">u insensitive</div>
+</div></div>
+<div class="message" id="msg-1514730891727999137"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:39">11 Jun 2026 20:39</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730825797861626"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">fck u</span></div></a></div>
+<div class="message-content">toxicity ruins lives</div>
+</div></div>
+<div class="message" id="msg-1514730983956414585"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:40">11 Jun 2026 20:40</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730891727999137"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">toxicity ruins lives</span></div></a></div>
+<div class="message-content">MEOWLIYA IS SPEEDRUNNING RUINING MINE</div>
+</div></div>
+<div class="message" id="msg-1514730996942114968"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:40">11 Jun 2026 20:40</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730891727999137"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">toxicity ruins lives</span></div></a></div>
+<div class="message-content">exactly</div>
+</div></div>
+<div class="message" id="msg-1514731050964877503"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:40">11 Jun 2026 20:40</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730983956414585"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">MEOWLIYA IS SPEEDRUNNING RUINING MINE</span></div></a></div>
+<div class="message-content">this statement makes no sense</div>
+</div></div>
+<div class="message" id="msg-1514731126365622333"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:40">11 Jun 2026 20:40</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730983956414585"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">MEOWLIYA IS SPEEDRUNNING RUINING MINE</span></div></a></div>
+<div class="message-content">oh that&#x27;s ruining word</div>
+</div></div>
+<div class="message  grouped" id="msg-1514731162390630593"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:40">20:40</div></div><div class="message-body"><div class="message-content">Running and ruining together made my brain balls jiggle</div>
+</div></div>
+<div class="message" id="msg-1514731241025568778"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:41">11 Jun 2026 20:41</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514730996942114968"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">exactly</span></div></a></div>
+<div class="message-content">coming from you. ofcourse. what an irony</div>
+</div></div>
+<div class="message" id="msg-1514731401675538563"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:41">11 Jun 2026 20:41</span></div>
+<div class="message-content"><img class="emoji" src="<img class="inline-url-image" src="https://cdn.discordapp.com/emojis/883051834833506315.gif?size=32" alt="https://cdn.discordapp.com/emojis/883051834833506315.gif?size=32" loading="lazy">" alt=":AP2UNekoBoySquish:" title=":AP2UNekoBoySquish:"></div>
+</div></div>
+<div class="message" id="msg-1514731401813954675"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:41">11 Jun 2026 20:41</span></div>
+<div class="message-content">I don&#x27;t think u shld put ur irl pfp as ur discord pfp</div>
+</div></div>
+<div class="message" id="msg-1514731447045587088"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:41">11 Jun 2026 20:41</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514731401813954675"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">I don&#x27;t think u shld put ur irl pfp as ur discord pfp</span></div></a></div>
+<div class="message-content">lol i warned him</div>
+</div></div>
+<div class="message" id="msg-1514731505228976309"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:42">11 Jun 2026 20:42</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514731401813954675"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">I don&#x27;t think u shld put ur irl pfp as ur discord pfp</span></div></a></div>
+<div class="message-content">its really old + its already on my insta which is linked to my discord</div>
+</div></div>
+<div class="message" id="msg-1514731517933523005"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:42">11 Jun 2026 20:42</span></div>
+<div class="message-content">ik ur connections show ur identity and ig u don&#x27;t care but apparently it&#x27;s not safe to put ur pfp on</div>
+</div></div>
+<div class="message  grouped" id="msg-1514731529773912187"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:42">20:42</div></div><div class="message-body"><div class="message-content">Even tho it&#x27;s old</div>
+</div></div>
+<div class="message  grouped" id="msg-1514731545297031168"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:42">20:42</div></div><div class="message-body"><div class="message-content">Rest is ur call</div>
+</div></div>
+<div class="message" id="msg-1514731607267872818"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:42">11 Jun 2026 20:42</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514731505228976309"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">its really old + its already on my insta which is linked to my discord</span></div></a></div>
+<div class="message-content">unlink ur insta ig..</div>
+</div></div>
+<div class="message  grouped" id="msg-1514731641107382332"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:42">20:42</div></div><div class="message-body"><div class="message-content">bro this guy is revealing his whole identity on discord</div>
+</div></div>
+<div class="message  grouped" id="msg-1514731647654826177"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:42">20:42</div></div><div class="message-body"><div class="message-content">OMFG</div>
+</div></div>
+<div class="message" id="msg-1514731709520806070"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:43">11 Jun 2026 20:43</span></div>
+<div class="message-content">this one works?</div>
+</div></div>
+<div class="message" id="msg-1514731748368453754"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:43">11 Jun 2026 20:43</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514731641107382332"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meownox</span> <span class="reply-text">bro this guy is revealing his whole identity on discord</span></div></a></div>
+<div class="message-content">it has nothing on it</div>
+</div></div>
+<div class="message  grouped" id="msg-1514731761882501242"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:43">20:43</div></div><div class="message-body"><div class="message-content">i dont even use it</div>
+</div></div>
+<div class="message" id="msg-1514731770044481546"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:43">11 Jun 2026 20:43</span></div>
+<div class="message-content">yeah this is good until someone uses claude on it 💀</div>
+</div></div>
+<div class="message" id="msg-1514731787409162240"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:43">11 Jun 2026 20:43</span></div>
+<div class="message-content">0 images 0 anything</div>
+</div></div>
+<div class="message" id="msg-1514731792773550190"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1454042397389623395.png" alt="meownox" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#7649f3">meownox</span><span class="message-timestamp" title="11 Jun 2026 20:43">11 Jun 2026 20:43</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514731761882501242"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">i dont even use it</span></div></a></div>
+<div class="message-content">ig</div>
+</div></div>
+<div class="message" id="msg-1514731826684625116"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:43">11 Jun 2026 20:43</span></div>
+<div class="message-content">just an account</div>
+</div></div>
+<div class="message  grouped" id="msg-1514731845235773541"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:43">20:43</div></div><div class="message-body"><div class="message-content">with my face onnit</div>
+</div></div>
+<div class="message  grouped" id="msg-1514731990946021567"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:44">20:44</div></div><div class="message-body"><div class="message-content">this is more of my recent pictures</div>
+</div></div>
+<div class="message  grouped" id="msg-1514732041785184337"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:44">20:44</div></div><div class="message-body"><div class="message-content">which a girl made into ai</div>
+</div></div>
+<div class="message  grouped" id="msg-1514732095338053815"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:44">20:44</div></div><div class="message-body"><div class="message-content">im using it everywhere since</div>
+</div></div>
+<div class="message" id="msg-1514732103055573162"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:44">11 Jun 2026 20:44</span></div>
+<div class="message-content">I lost braincells reading this btw<span class="edited-tag">(edited)</span></div>
+</div></div>
+<div class="message" id="msg-1514732144491102400"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:44">11 Jun 2026 20:44</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514732103055573162"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">I lost braincells reading this btw</span></div></a></div>
+<div class="message-content">dont read it</div>
+</div></div>
+<div class="message  grouped" id="msg-1514732171762597978"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:44">20:44</div></div><div class="message-body"><div class="message-content">u dont wona read anything do u</div>
+</div></div>
+<div class="message  grouped" id="msg-1514732217627312278"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:45">20:45</div></div><div class="message-body"><div class="message-content">just go away bro.</div>
+</div></div>
+<div class="message  grouped" id="msg-1514732348497858662"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:45">20:45</div></div><div class="message-body"><div class="message-content">i try to help u but u dont accept it and now ur even ruining my emotional stability</div>
+</div></div>
+<div class="message" id="msg-1514732546439774422"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:46">11 Jun 2026 20:46</span></div>
+<div class="message-content">🤞🏻</div>
+</div></div>
+<div class="message" id="msg-1514734978305622056"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 20:56">11 Jun 2026 20:56</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514708960874336286"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowchan</span> <span class="reply-text">💀</span></div></a></div>
+<div class="message-content"><span class="mention mention-user">@meowliya is a cutie</span></div>
+</div></div>
+<div class="message  grouped" id="msg-1514734994436784360"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:56">20:56</div></div><div class="message-body"><div class="message-content">no longer be</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735022899335209"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:56">20:56</div></div><div class="message-body"><div class="message-content">rude to thor</div>
+</div></div>
+<div class="message" id="msg-1514735038158344242"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:56">11 Jun 2026 20:56</span></div>
+<div class="message-content">what now</div>
+</div></div>
+<div class="message" id="msg-1514735056323608787"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 20:56">11 Jun 2026 20:56</span></div>
+<div class="message-content">he a nice guy</div>
+</div></div>
+<div class="message" id="msg-1514735147742662698"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:56">11 Jun 2026 20:56</span></div>
+<div class="message-content">I haven&#x27;t been rude to anyone...</div>
+</div></div>
+<div class="message" id="msg-1514735284254937188"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 20:57">11 Jun 2026 20:57</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514735147742662698"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">I haven&#x27;t been rude to anyone...</span></div></a></div>
+<div class="message-content">ok dont be normal to thor</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735300910256148"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:57">20:57</div></div><div class="message-body"><div class="message-content">he a nice guy</div>
+</div></div>
+<div class="message" id="msg-1514735316152488077"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:57">11 Jun 2026 20:57</span></div>
+<div class="message-content">but honestly you gooners should be publicly executed-</div>
+</div></div>
+<div class="message" id="msg-1514735344342536242"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:57">11 Jun 2026 20:57</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514735300910256148"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowstin</span> <span class="reply-text">he a nice guy</span></div></a></div>
+<div class="message-content">okay...</div>
+</div></div>
+<div class="message" id="msg-1514735349979418745"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 20:57">11 Jun 2026 20:57</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514735316152488077"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">but honestly you gooners should be publicly executed-</span></div></a></div>
+</div></div>
+<div class="message  grouped" id="msg-1514735367029264444"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:57">20:57</div></div><div class="message-body"><div class="message-content">me to?</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735388114161705"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:57">20:57</div></div><div class="message-body"><div class="message-content">i thought we same boat</div>
+</div></div>
+<div class="message" id="msg-1514735490052395018"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:58">11 Jun 2026 20:58</span></div>
+<div class="message-content">you&#x27;re know for being weird</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735500240355389"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:58">20:58</div></div><div class="message-body"><div class="message-content">change your ways</div>
+</div></div>
+<div class="message" id="msg-1514735545584980048"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:58">11 Jun 2026 20:58</span></div>
+<div class="message-content">whos saying..</div>
+</div></div>
+<div class="message" id="msg-1514735598437531810"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:58">11 Jun 2026 20:58</span></div>
+<div class="message-content">you talk like I&#x27;m weird lol?</div>
+</div></div>
+<div class="message" id="msg-1514735678858985675"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 20:58">11 Jun 2026 20:58</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514735598437531810"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">you talk like I&#x27;m weird lol?</span></div></a></div>
+<div class="message-content">ik im weird</div>
+</div></div>
+<div class="message" id="msg-1514735680733970594"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 20:58">11 Jun 2026 20:58</span></div>
+<div class="message-content">why do u think that ur desperate behaviour is normal</div>
+</div></div>
+<div class="message" id="msg-1514735689412116503"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 20:58">11 Jun 2026 20:58</span></div>
+<div class="message-content">and i love it</div>
+</div></div>
+<div class="message" id="msg-1514735710517592075"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 20:58">11 Jun 2026 20:58</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514735680733970594"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">why do u think that ur desperate behaviour is normal</span></div></a></div>
+<div class="message-content">omg</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735730398724187"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:59">20:59</div></div><div class="message-body"><div class="message-content"><img class="inline-url-image" src="https://cdn.discordapp.com/attachments/1385653211779563540/1386065652053180641/OK2.gif" alt="https://cdn.discordapp.com/attachments/1385653211779563540/1386065652053180641/OK2.gif" loading="lazy"></div>
+<div class="embed" style="border-left-color:#4f545c">
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735746622427238"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:59">20:59</div></div><div class="message-body"><div class="message-content">yall stop</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735764477444308"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:59">20:59</div></div><div class="message-body"><div class="message-content">lets all be weird</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735893678915706"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:59">20:59</div></div><div class="message-body"></div></div>
+<div class="message  grouped" id="msg-1514735911659765891"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:59">20:59</div></div><div class="message-body"><div class="message-content"><span class="mention mention-user">@meowliya is a cutie</span>  remeber?</div>
+</div></div>
+<div class="message" id="msg-1514735945943875736"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 20:59">11 Jun 2026 20:59</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514735680733970594"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">why do u think that ur desperate behaviour is normal</span></div></a></div>
+<div class="message-content">I don&#x27;t see what&#x27;s wrong in wanting a wifeyyyyy 💀 ?</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735974586781807"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 20:59">20:59</div></div><div class="message-body"><div class="message-content"><img class="inline-url-image" src="https://cdn.discordapp.com/attachments/1116022309455663236/1514364823541125120/attachment.gif" alt="https://cdn.discordapp.com/attachments/1116022309455663236/1514364823541125120/attachment.gif" loading="lazy"></div>
+<div class="embed" style="border-left-color:#4f545c">
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+</div>
+</div></div>
+<div class="message  grouped" id="msg-1514735992731336775"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:00">21:00</div></div><div class="message-body"><div class="message-content"><img class="inline-url-image" src="https://cdn.discordapp.com/attachments/1116022309455663236/1514365236151324742/attachment.gif" alt="https://cdn.discordapp.com/attachments/1116022309455663236/1514365236151324742/attachment.gif" loading="lazy"></div>
+<div class="embed" style="border-left-color:#4f545c">
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+</div>
+</div></div>
+<div class="message" id="msg-1514736005981278310"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 21:00">11 Jun 2026 21:00</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514735974586781807"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text"><a href="https://cdn.discordapp.com/attachments/1116022309455663236/1514364823541125120/a…" target="_blank" rel="noopener noreferrer">https://cdn.discordapp.com/attachments/1116022309455663236/1514364823541125120/a…</a></span></div></a></div>
+<div class="message-content">..........</div>
+</div></div>
+<div class="message" id="msg-1514736021273575524"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 21:00">11 Jun 2026 21:00</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514735992731336775"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text"><a href="https://cdn.discordapp.com/attachments/1116022309455663236/1514365236151324742/a…" target="_blank" rel="noopener noreferrer">https://cdn.discordapp.com/attachments/1116022309455663236/1514365236151324742/a…</a></span></div></a></div>
+<div class="message-content">................</div>
+</div></div>
+<div class="message" id="msg-1514736049635459234"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:00">11 Jun 2026 21:00</span></div>
+<div class="message-content">brother thinks hes different from us</div>
+</div></div>
+<div class="message" id="msg-1514736088730570832"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 21:00">11 Jun 2026 21:00</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514736049635459234"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">brother thinks hes different from us</span></div></a></div>
+<div class="message-content">niga we all same</div>
+</div></div>
+<div class="message  grouped" id="msg-1514736103226347550"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:00">21:00</div></div><div class="message-body"><div class="message-content">no btiches</div>
+</div></div>
+<div class="message  grouped" id="msg-1514736113284022402"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:00">21:00</div></div><div class="message-body"><div class="message-content">no wife</div>
+</div></div>
+<div class="message  grouped" id="msg-1514736121056067624"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:00">21:00</div></div><div class="message-body"><div class="message-content">horny af</div>
+</div></div>
+<div class="message  grouped" id="msg-1514736141595705537"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:00">21:00</div></div><div class="message-body"><div class="message-content">lonely af</div>
+</div></div>
+<div class="message" id="msg-1514736150512799918"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:00">11 Jun 2026 21:00</span></div>
+<div class="message-content">dont be in a dilemma that ur desperate so called wifey behaviour is normal</div>
+</div></div>
+<div class="message" id="msg-1514736157211103313"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 21:00">11 Jun 2026 21:00</span></div>
+<div class="message-content">hard asf</div>
+</div></div>
+<div class="message" id="msg-1514736169391358119"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:00">11 Jun 2026 21:00</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514736121056067624"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowstin</span> <span class="reply-text">horny af</span></div></a></div>
+<div class="message-content">that&#x27;s just you all...</div>
+</div></div>
+<div class="message" id="msg-1514736188139770017"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:00">11 Jun 2026 21:00</span></div>
+<div class="message-content">ur no different from us</div>
+</div></div>
+<div class="message  grouped" id="msg-1514736326765973565"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:01">21:01</div></div><div class="message-body"><div class="message-content">the way u act tryna be cool and shi is fckin annoying.</div>
+</div></div>
+<div class="message" id="msg-1514736421255123014"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:01">11 Jun 2026 21:01</span></div>
+<div class="message-content">all I&#x27;m saying is drop your weird acts</div>
+</div></div>
+<div class="message" id="msg-1514736422286790747"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:01">11 Jun 2026 21:01</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514736169391358119"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">that&#x27;s just you all...</span></div></a></div>
+<div class="message-content">what about the rest of the points he made.</div>
+</div></div>
+<div class="message" id="msg-1514736480260591736"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:01">11 Jun 2026 21:01</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514736421255123014"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">all I&#x27;m saying is drop your weird acts</span></div></a></div>
+<div class="message-content">exactly what im saying back to u</div>
+</div></div>
+<div class="message  grouped" id="msg-1514736513450115214"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:02">21:02</div></div><div class="message-body"><div class="message-content">as soon as u stop. i stop</div>
+</div></div>
+<div class="message" id="msg-1514736715015917748"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:02">11 Jun 2026 21:02</span></div>
+<div class="message-content">lmao what??</div>
+</div></div>
+<div class="message  grouped" id="msg-1514736807214977246"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:03">21:03</div></div><div class="message-body"><div class="message-content">you aren&#x27;t making any sense yk</div>
+</div></div>
+<div class="message" id="msg-1514736939297935390"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:03">11 Jun 2026 21:03</span></div>
+<div class="message-content">u just need to drop ur act too</div>
+</div></div>
+<div class="message" id="msg-1514737102171148320"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:04">11 Jun 2026 21:04</span></div>
+<div class="message-content">I&#x27;ve never been acting up here...</div>
+</div></div>
+<div class="message" id="msg-1514737112669491292"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:04">11 Jun 2026 21:04</span></div>
+<div class="message-content">me austin other all act weird and we agree. but u need to undersrtand that u being so desperate about a wife is no different than us.</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737124929441962"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:04">21:04</div></div><div class="message-body"><div class="message-content">even this is wierd</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737195938742423"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:04">21:04</div></div><div class="message-body"><div class="message-content">u need to accept that ur being wierd and theres no problem in that</div>
+</div></div>
+<div class="message" id="msg-1514737204016971847"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:04">11 Jun 2026 21:04</span></div>
+<div class="message-content">whatever you think is right....</div>
+</div></div>
+<div class="message" id="msg-1514737253966942329"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:05">11 Jun 2026 21:05</span></div>
+<div class="message-content">this dude talks in fcking puzzles on god</div>
+</div></div>
+<div class="message" id="msg-1514737318311887069"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:05">11 Jun 2026 21:05</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514737195938742423"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">u need to accept that ur being wierd and theres no problem in that</span></div></a></div>
+<div class="message-content"><img class="inline-url-image" src="https://cdn.discordapp.com/attachments/1116022309455663236/1509136461189087232/image.gif" alt="https://cdn.discordapp.com/attachments/1116022309455663236/1509136461189087232/image.gif" loading="lazy"></div>
+<div class="embed" style="border-left-color:#4f545c">
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+</div>
+</div></div>
+<div class="message" id="msg-1514737345440514201"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 21:05">11 Jun 2026 21:05</span></div>
+<div class="message-content"><img class="inline-url-image" src="https://cdn.discordapp.com/attachments/1479744637760442520/1514667815322255552/attachment.gif" alt="https://cdn.discordapp.com/attachments/1479744637760442520/1514667815322255552/attachment.gif" loading="lazy"></div>
+<div class="embed" style="border-left-color:#4f545c">
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+</div>
+</div></div>
+<div class="message" id="msg-1514737352638075041"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:05">11 Jun 2026 21:05</span></div>
+<div class="message-content">stop being creeps?</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737362427711580"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:05">21:05</div></div><div class="message-body"><div class="message-content">gonners?</div>
+</div></div>
+<div class="message" id="msg-1514737365804126440"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 21:05">11 Jun 2026 21:05</span></div>
+<div class="message-content">my girl</div>
+</div></div>
+<div class="message" id="msg-1514737397001097236"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:05">11 Jun 2026 21:05</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514737345440514201"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowstin</span> <span class="reply-text"><a href="https://cdn.discordapp.com/attachments/1479744637760442520/1514667815322255552/a…" target="_blank" rel="noopener noreferrer">https://cdn.discordapp.com/attachments/1479744637760442520/1514667815322255552/a…</a></span></div></a></div>
+<div class="message-content">look at this weirdo</div>
+</div></div>
+<div class="message" id="msg-1514737457965437069"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:05">11 Jun 2026 21:05</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514737397001097236"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">look at this weirdo</span></div></a></div>
+<div class="message-content">HE FUCKING ACCEPTS IT</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737471533879486"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:05">21:05</div></div><div class="message-body"><div class="message-content">U DONT</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737546637348865"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:06">21:06</div></div><div class="message-body"><div class="message-content">the way u express wierd shi is different but ur wierd too</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737572876648518"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:06">21:06</div></div><div class="message-body"><div class="message-content">fuckin g accept that</div>
+</div></div>
+<div class="message" id="msg-1514737643311857774"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:06">11 Jun 2026 21:06</span></div>
+<div class="message-content">do you&#x27;ve female friends 💀?</div>
+</div></div>
+<div class="message" id="msg-1514737653327597730"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 21:06">11 Jun 2026 21:06</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514737397001097236"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">look at this weirdo</span></div></a></div>
+<div class="message-content">????</div>
+</div></div>
+<div class="message" id="msg-1514737674987241594"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:06">11 Jun 2026 21:06</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514737643311857774"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">do you&#x27;ve female friends 💀?</span></div></a></div>
+<div class="message-content">yes</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737682184540291"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:06">21:06</div></div><div class="message-body"><div class="message-content">and alot</div>
+<div class="reactions"><div class="reaction"><span class="reaction-emoji">💀</span><span class="reaction-count">1</span></div><div class="reaction"><span class="reaction-emoji">☠️</span><span class="reaction-count">1</span></div></div></div></div>
+<div class="message" id="msg-1514737764485173400"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:07">11 Jun 2026 21:07</span></div>
+<div class="message-content">would you talk like that infront of em like you do here?</div>
+</div></div>
+<div class="message" id="msg-1514737828020621394"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:07">11 Jun 2026 21:07</span></div>
+<div class="message-content">i talk to them with even more openness</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737865785999460"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:07">21:07</div></div><div class="message-body"><div class="message-content">i dont need to hide who i am for a girl bro</div>
+</div></div>
+<div class="message" id="msg-1514737876993048748"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-782999941421334528.png" alt="meowstin" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#fff200">meowstin</span><span class="message-timestamp" title="11 Jun 2026 21:07">11 Jun 2026 21:07</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514737764485173400"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text">would you talk like that infront of em like you do here?</span></div></a></div>
+<div class="message-content"><img class="inline-url-image" src="https://cdn.discordapp.com/attachments/1479744637760442520/1514667714218819637/image.gif" alt="https://cdn.discordapp.com/attachments/1479744637760442520/1514667714218819637/image.gif" loading="lazy"></div>
+<div class="embed" style="border-left-color:#4f545c">
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737889970356395"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:07">21:07</div></div><div class="message-body"><div class="message-content">she is mine</div>
+<div class="reactions"><div class="reaction"><span class="reaction-emoji">❤️</span><span class="reaction-count">1</span></div></div></div></div>
+<div class="message" id="msg-1514737939245170880"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:07">11 Jun 2026 21:07</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514737828020621394"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowinsaan</span> <span class="reply-text">i talk to them with even more openness</span></div></a></div>
+<div class="message-content"><img class="inline-url-image" src="https://cdn.discordapp.com/attachments/1116022309455663236/1509136461189087232/image.gif" alt="https://cdn.discordapp.com/attachments/1116022309455663236/1509136461189087232/image.gif" loading="lazy"></div>
+<div class="embed" style="border-left-color:#4f545c">
+<img class="embed-thumbnail" src="assets/embeds/thumbnails/thumbnail-0.png" loading="lazy">
+</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737967569174570"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:07">21:07</div></div><div class="message-body"><div class="message-content">this chat needs to be saved</div>
+</div></div>
+<div class="message" id="msg-1514737968743579868"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-800304400781410354.png" alt="meowinsaan" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ff003f">meowinsaan</span><span class="message-timestamp" title="11 Jun 2026 21:07">11 Jun 2026 21:07</span></div>
+<div class="reply-context"><a class="reply-link" href="#msg-1514737939245170880"><div class="reply-bar"></div><div class="reply-content"><span class="reply-author">meowliya is a cutie</span> <span class="reply-text"><a href="https://cdn.discordapp.com/attachments/1116022309455663236/1509136461189087232/i…" target="_blank" rel="noopener noreferrer">https://cdn.discordapp.com/attachments/1116022309455663236/1509136461189087232/i…</a></span></div></a></div>
+<div class="message-content">bro is not cool</div>
+</div></div>
+<div class="message" id="msg-1514737973566902534"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-840587974000771072.png" alt="meowliya is a cutie" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#3b55aa">meowliya is a cutie</span><span class="message-timestamp" title="11 Jun 2026 21:07">11 Jun 2026 21:07</span></div>
+<div class="message-content">lmfao</div>
+</div></div>
+<div class="message  grouped" id="msg-1514737983595614389"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:07">21:07</div></div><div class="message-body"><div class="message-content">no ways</div>
+</div></div>
+<div class="message  grouped" id="msg-1514738029573570762"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:08">21:08</div></div><div class="message-body"><div class="message-content">?record 200 funny</div>
+</div></div>
+<div class="message  grouped" id="msg-1514738046795255848"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:08">21:08</div></div><div class="message-body"><div class="message-content">what was the cmd</div>
+</div></div>
+<div class="message  grouped" id="msg-1514738054009585674"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:08">21:08</div></div><div class="message-body"><div class="message-content">:sob</div>
+</div></div>
+<div class="message  grouped" id="msg-1514738172792410253"><div class="avatar-col grouped"><div class="message-timestamp-grouped" title="11 Jun 2026 21:08">21:08</div></div><div class="message-body"><div class="message-content">?record funny 200</div>
+</div></div>
+<div class="message" id="msg-1514738173979267252"><div class="avatar-col"><img class="avatar" src="assets/avatars/user-1495803877919031506.png" alt="Lethal" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'"></div><div class="message-body"><div class="message-header"><span class="author-name" style="color:#ffffff">Lethal</span><span class="bot-badge">BOT</span><span class="message-timestamp" title="11 Jun 2026 21:08">11 Jun 2026 21:08</span></div>
+<div class="message-content">📄 Fetching and recording up to 200 messages…</div>
+</div></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="footer-stat">📨 <strong>200</strong> messages</span>
+    <span class="footer-stat">📅 Exported <strong>11 Jun 2026 at 21:08 UTC</strong></span>
+    <span class="footer-stat" id="exported-by-stat" style="display:' + (exportedByVisible ? 'inline' : 'none') + '">
+      👤 Exported by <strong>sti1ltyping</strong>
+    </span>
+    <span class="footer-spacer"></span>
+    <span class="footer-brand">discord_transcript</span>
+  </div>
+</div>
+
+<!-- Scroll to bottom -->
+<button id="scroll-btn" title="Scroll to bottom" onclick="scrollToBottom()">↓</button>
+
+<script>
+// ── Search ──────────────────────────────────────────────────────────────
+let originalHTML = {};
+const pane = document.getElementById('messages-pane');
+const countEl = document.getElementById('search-count');
+
+function escapeRE(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function doSearch(q) {
+  // Restore original content first
+  document.querySelectorAll('.message[data-orig]').forEach(el => {
+    el.innerHTML = el.dataset.orig;
+    delete el.dataset.orig;
+  });
+  document.querySelectorAll('.message').forEach(el => {
+    el.classList.remove('highlight');
+  });
+
+  if (!q.trim()) {
+    countEl.textContent = '';
+    return;
+  }
+
+  const re = new RegExp(escapeRE(q.trim()), 'gi');
+  let matches = 0;
+  let first = null;
+
+  document.querySelectorAll('.message').forEach(el => {
+    const body = el.querySelector('.message-body') || el;
+    const text = body.innerText;
+    if (re.test(text)) {
+      matches++;
+      el.classList.add('highlight');
+      if (!first) first = el;
+      // Highlight text nodes
+      if (!el.dataset.orig) el.dataset.orig = el.innerHTML;
+      highlightNode(el, re);
+    }
+  });
+
+  countEl.textContent = matches ? `${matches} result${matches !== 1 ? 's' : ''}` : 'No results';
+  if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function highlightNode(root, re) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(node => {
+    const parent = node.parentNode;
+    if (!parent || ['SCRIPT','STYLE','CODE','PRE'].includes(parent.tagName)) return;
+    const txt = node.textContent;
+    if (!re.test(txt)) return;
+    re.lastIndex = 0;
+    const span = document.createElement('span');
+    span.innerHTML = txt.replace(re, m => `<mark>${m}</mark>`);
+    parent.replaceChild(span, node);
+  });
+}
+
+// ── Scroll-to-bottom button ────────────────────────────────────────────
+function scrollToBottom() {
+  pane.scrollTo({ top: pane.scrollHeight, behavior: 'smooth' });
+}
+
+const scrollBtn = document.getElementById('scroll-btn');
+pane.addEventListener('scroll', () => {
+  const distFromBottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight;
+  scrollBtn.classList.toggle('visible', distFromBottom > 300);
+});
+
+// ── Keyboard shortcut: Ctrl+F / Cmd+F focuses search ──────────────────
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    document.getElementById('search-input').focus();
+  }
+});
+
+// ── Initial scroll to bottom ───────────────────────────────────────────
+window.addEventListener('load', () => {
+  pane.scrollTop = pane.scrollHeight;
+});
+</script>
+</body>
+</html>
